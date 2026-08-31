@@ -3,10 +3,12 @@
 import argparse
 import asyncio
 import sys
+from pathlib import Path
 from typing import Sequence
 
-from inference_os.config import BenchmarkConfig
+from inference_os.config import BenchmarkConfig, SweepConfig, load_config
 from inference_os.runner.engine import execute_benchmark
+from inference_os.runner.sweep import execute_sweep
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -17,11 +19,18 @@ def create_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
 
-    run_parser = subparsers.add_parser("run", help="Run benchmark experiment")
+    # Single run command
+    run_parser = subparsers.add_parser("run", help="Run single benchmark experiment")
+    run_parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Path to YAML or JSON benchmark configuration file",
+    )
     run_parser.add_argument(
         "--model",
         type=str,
-        required=True,
+        default=None,
         help="Serving model identifier on vLLM server",
     )
     run_parser.add_argument(
@@ -79,6 +88,17 @@ def create_parser() -> argparse.ArgumentParser:
         help="Experiment ID tag",
     )
 
+    # Sweep command
+    sweep_parser = subparsers.add_parser(
+        "sweep", help="Run 1D parameter sweep experiment"
+    )
+    sweep_parser.add_argument(
+        "--config",
+        type=str,
+        required=True,
+        help="Path to YAML or JSON sweep configuration file",
+    )
+
     return parser
 
 
@@ -88,18 +108,30 @@ def main(args: Sequence[str] | None = None) -> int:
     parsed_args = parser.parse_args(args)
 
     if parsed_args.command == "run":
-        config = BenchmarkConfig(
-            model=parsed_args.model,
-            base_url=parsed_args.base_url,
-            prompt_tokens=parsed_args.prompt_tokens,
-            max_output_tokens=parsed_args.max_output_tokens,
-            num_requests=parsed_args.num_requests,
-            warmup_requests=parsed_args.warmup_requests,
-            seed=parsed_args.seed,
-            temperature=parsed_args.temperature,
-            experiment_id=parsed_args.experiment_id,
-            output_dir=parsed_args.output_dir,
-        )
+        if parsed_args.config:
+            loaded = load_config(parsed_args.config)
+            if not isinstance(loaded, BenchmarkConfig):
+                raise ValueError(
+                    f"Expected single-run BenchmarkConfig in {parsed_args.config}, "
+                    "found SweepConfig"
+                )
+            config = loaded
+        else:
+            if not parsed_args.model:
+                parser.error("Must provide either --config or --model for 'run'")
+            config = BenchmarkConfig(
+                model=parsed_args.model,
+                base_url=parsed_args.base_url,
+                prompt_tokens=parsed_args.prompt_tokens,
+                max_output_tokens=parsed_args.max_output_tokens,
+                num_requests=parsed_args.num_requests,
+                warmup_requests=parsed_args.warmup_requests,
+                seed=parsed_args.seed,
+                temperature=parsed_args.temperature,
+                experiment_id=parsed_args.experiment_id,
+                output_dir=parsed_args.output_dir,
+            )
+
         run_dir, result, _ = asyncio.run(execute_benchmark(config))
         print(f"Benchmark completed successfully! Run saved to: {run_dir}")
         print(f"Total Measured Requests: {result.summary.total_requests}")
@@ -110,8 +142,25 @@ def main(args: Sequence[str] | None = None) -> int:
         )
         return 0
 
+    if parsed_args.command == "sweep":
+        loaded = load_config(parsed_args.config)
+        if not isinstance(loaded, SweepConfig):
+            raise ValueError(
+                f"Expected SweepConfig in {parsed_args.config}, "
+                "found single-run BenchmarkConfig"
+            )
+        sweep_dir, point_results = asyncio.run(execute_sweep(loaded))
+        print(f"Parameter sweep completed successfully! Saved to: {sweep_dir}")
+        print(f"Sweep Points Executed: {len(point_results)}")
+        plots_dir = Path(sweep_dir) / "plots"
+        if plots_dir.exists():
+            print(f"Plots saved to: {plots_dir}")
+        return 0
+
+    parser.print_help()
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
+

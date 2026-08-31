@@ -114,6 +114,16 @@ def test_compute_benchmark_summary_success_and_throughput() -> None:
     assert summary.e2e_latency_stats.mean == pytest.approx(1.5)
     assert summary.e2e_latency_stats.p50 == pytest.approx(1.5)
 
+    # TPOT stats:
+    # m1: (2.0 - 1.2) / 19 = 0.8 / 19 = ~0.042105s
+    # m2: (3.5 - 2.3) / 29 = 1.2 / 29 = ~0.041379s
+    # m3: (6.0 - 4.4) / 49 = 1.6 / 49 = ~0.032653s
+    assert summary.tpot_stats is not None
+    assert summary.tpot_stats.count == 3
+    expected_tpot_mean = (0.8 / 19 + 1.2 / 29 + 1.6 / 49) / 3
+    assert summary.tpot_stats.mean == pytest.approx(expected_tpot_mean)
+
+
 
 def test_compute_benchmark_summary_partial_failures() -> None:
     """Verify failed requests are excluded from latency metrics and counted properly."""

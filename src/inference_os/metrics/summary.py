@@ -36,6 +36,7 @@ class BenchmarkSummary:
     output_token_throughput: float
     ttft_stats: Optional[MetricStats] = None
     e2e_latency_stats: Optional[MetricStats] = None
+    tpot_stats: Optional[MetricStats] = None
 
 
 def _calculate_percentile(sorted_values: Sequence[float], percentile: float) -> float:
@@ -112,9 +113,11 @@ def compute_benchmark_summary(
 
     ttft_values = [m.ttft_seconds for m in successful if m.ttft_seconds is not None]
     e2e_values = [m.e2e_latency_seconds for m in successful]
+    tpot_values = [m.tpot_seconds for m in successful if m.tpot_seconds is not None]
 
     ttft_stats = calculate_metric_stats(ttft_values)
     e2e_stats = calculate_metric_stats(e2e_values)
+    tpot_stats = calculate_metric_stats(tpot_values)
 
     return BenchmarkSummary(
         total_requests=total_requests,
@@ -127,4 +130,5 @@ def compute_benchmark_summary(
         output_token_throughput=output_token_throughput,
         ttft_stats=ttft_stats,
         e2e_latency_stats=e2e_stats,
+        tpot_stats=tpot_stats,
     )

@@ -67,3 +67,18 @@ class RequestMeasurement:
     def e2e_latency_seconds(self) -> float:
         """End-to-end request latency in seconds."""
         return (self.completion_time_ns - self.start_time_ns) / NANOSECONDS_PER_SECOND
+
+    @property
+    def tpot_seconds(self) -> Optional[float]:
+        """Time Per Output Token (TPOT) for decode phase in seconds.
+
+        Derived strictly from validated output token counts:
+        TPOT = (completion_time - first_token_time) / (output_tokens - 1)
+        Returns None if first token was not observed or output_tokens <= 1.
+        """
+        if self.first_token_time_ns is None or self.output_tokens <= 1:
+            return None
+        decode_tokens = self.output_tokens - 1
+        decode_time_ns = self.completion_time_ns - self.first_token_time_ns
+        return (decode_time_ns / decode_tokens) / NANOSECONDS_PER_SECOND
+

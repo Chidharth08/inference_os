@@ -20,6 +20,24 @@ def test_valid_request_measurement_metrics() -> None:
 
     assert req.ttft_seconds == pytest.approx(0.2)
     assert req.e2e_latency_seconds == pytest.approx(1.5)
+    # decode duration = 2.5s - 1.2s = 1.3s for 31 decode tokens = 1.3 / 31 = ~0.041935s
+    assert req.tpot_seconds == pytest.approx(1.3 / 31)
+
+
+def test_tpot_single_output_token_returns_none() -> None:
+    """Verify TPOT returns None if only 1 output token generated (no decode steps)."""
+    req = RequestMeasurement(
+        request_id="req-single-tok",
+        start_time_ns=1_000_000_000,
+        first_token_time_ns=1_200_000_000,
+        completion_time_ns=1_200_000_000,
+        input_tokens=128,
+        output_tokens=1,
+        success=True,
+    )
+    assert req.ttft_seconds == pytest.approx(0.2)
+    assert req.tpot_seconds is None
+
 
 
 def test_absent_first_token_timestamp() -> None:
