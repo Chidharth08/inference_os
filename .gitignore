@@ -47,5 +47,4 @@ htmlcov/
 *~
 .DS_Store
 
-# Local execution outputs (runs cache if uncommitted)
-runs/
+

@@ -1,0 +1,17 @@
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "base_url": "http://localhost:18000",
+  "prompt_tokens": 4096,
+  "max_output_tokens": 128,
+  "num_requests": 10,
+  "warmup_requests": 2,
+  "seed": 42,
+  "temperature": 0.0,
+  "telemetry_interval_seconds": 0.1,
+  "device_index": 0,
+  "experiment_id": "E001A",
+  "output_dir": "runs/E001A_20260904_182047_d88d790b/prompt_tokens_4096",
+  "enable_prefix_caching": false,
+  "chunked_prefill": null,
+  "enable_chunked_prefill": false
+}
