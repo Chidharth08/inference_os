@@ -11,14 +11,13 @@ sweep_values:
   - 4096
 
 model: Qwen/Qwen2.5-7B-Instruct
-base_url: http://localhost:8000
+base_url: http://localhost:18000
 max_output_tokens: 128
 num_requests: 10
 warmup_requests: 2
 seed: 42
 temperature: 0.0
 enable_prefix_caching: false
-chunked_prefill: 512
 telemetry_interval_seconds: 0.1
 device_index: 0
 output_dir: runs
