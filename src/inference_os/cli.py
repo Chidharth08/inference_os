@@ -133,6 +133,10 @@ def main(args: Sequence[str] | None = None) -> int:
             )
 
         run_dir, result, _ = asyncio.run(execute_benchmark(config))
+        if result.summary.successful_requests == 0:
+            print(f"Benchmark failed: 0/{result.summary.total_requests} requests succeeded. Run saved to: {run_dir}")
+            return 1
+
         print(f"Benchmark completed successfully! Run saved to: {run_dir}")
         print(f"Total Measured Requests: {result.summary.total_requests}")
         print(f"Request Throughput:      {result.summary.request_throughput:.2f} req/s")
@@ -150,6 +154,27 @@ def main(args: Sequence[str] | None = None) -> int:
                 "found single-run BenchmarkConfig"
             )
         sweep_dir, point_results = asyncio.run(execute_sweep(loaded))
+        successful_points = sum(
+            1
+            for p in point_results
+            if p.get("benchmark", {}).get("successful_requests", 0) > 0
+        )
+        total_points = len(point_results)
+
+        if successful_points == 0:
+            print(
+                f"Parameter sweep failed: all {total_points} sweep points failed "
+                f"(0 successful requests). Saved to: {sweep_dir}"
+            )
+            return 1
+
+        if successful_points < total_points:
+            print(
+                f"Parameter sweep partially completed ({successful_points}/{total_points} passed). "
+                f"Saved to: {sweep_dir}"
+            )
+            return 1
+
         print(f"Parameter sweep completed successfully! Saved to: {sweep_dir}")
         print(f"Sweep Points Executed: {len(point_results)}")
         plots_dir = Path(sweep_dir) / "plots"

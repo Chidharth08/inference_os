@@ -28,6 +28,7 @@ class BenchmarkConfig:
     output_dir: str = "runs"
     enable_prefix_caching: bool = False
     chunked_prefill: Optional[int] = None
+    enable_chunked_prefill: bool = False
 
     def __post_init__(self) -> None:
         """Validate configuration invariants."""
@@ -89,6 +90,7 @@ class BenchmarkConfig:
             "output_dir",
             "enable_prefix_caching",
             "chunked_prefill",
+            "enable_chunked_prefill",
         }
         filtered_data = {k: v for k, v in data.items() if k in known_keys}
         return cls(**filtered_data)

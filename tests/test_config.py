@@ -111,9 +111,10 @@ experiment_id: E001A
 sweep_param: prompt_tokens
 sweep_values: [128, 512, 2048, 4096]
 model: Qwen/Qwen2.5-7B-Instruct
+base_url: http://localhost:18000
 max_output_tokens: 128
 enable_prefix_caching: false
-chunked_prefill: 512
+enable_chunked_prefill: false
 """
     yaml_file = tmp_path / "sweep.yaml"
     yaml_file.write_text(yaml_content, encoding="utf-8")
@@ -123,7 +124,26 @@ chunked_prefill: 512
     assert loaded.sweep_param == "prompt_tokens"
     assert loaded.sweep_values == (128, 512, 2048, 4096)
     assert loaded.base_config.model == "Qwen/Qwen2.5-7B-Instruct"
+    assert loaded.base_config.base_url == "http://localhost:18000"
     assert loaded.base_config.max_output_tokens == 128
     assert loaded.base_config.enable_prefix_caching is False
-    assert loaded.base_config.chunked_prefill == 512
+    assert loaded.base_config.enable_chunked_prefill is False
+
+
+def test_load_e001a_actual_config_file() -> None:
+    """Verify loading the actual repository configs/e001a_input_scaling.yaml."""
+    from pathlib import Path
+    from inference_os.config import load_config
+
+    config_path = Path("configs/e001a_input_scaling.yaml")
+    assert config_path.is_file()
+    cfg = load_config(config_path)
+    assert isinstance(cfg, SweepConfig)
+    assert cfg.experiment_id == "E001A"
+    assert cfg.sweep_param == "prompt_tokens"
+    assert cfg.sweep_values == (128, 512, 2048, 4096)
+    assert cfg.base_config.base_url == "http://localhost:18000"
+    assert cfg.base_config.enable_prefix_caching is False
+    assert cfg.base_config.enable_chunked_prefill is False
+
 

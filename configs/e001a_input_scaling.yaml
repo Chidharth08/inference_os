@@ -18,6 +18,7 @@ warmup_requests: 2
 seed: 42
 temperature: 0.0
 enable_prefix_caching: false
+enable_chunked_prefill: false
 telemetry_interval_seconds: 0.1
 device_index: 0
 output_dir: runs

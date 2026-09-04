@@ -37,6 +37,7 @@ class BenchmarkSummary:
     ttft_stats: Optional[MetricStats] = None
     e2e_latency_stats: Optional[MetricStats] = None
     tpot_stats: Optional[MetricStats] = None
+    errors: Optional[list[str]] = None
 
 
 def _calculate_percentile(sorted_values: Sequence[float], percentile: float) -> float:
@@ -119,6 +120,12 @@ def compute_benchmark_summary(
     e2e_stats = calculate_metric_stats(e2e_values)
     tpot_stats = calculate_metric_stats(tpot_values)
 
+    errors = [
+        m.error_message
+        for m in measurements
+        if not m.success and m.error_message is not None
+    ]
+
     return BenchmarkSummary(
         total_requests=total_requests,
         successful_requests=len(successful),
@@ -131,4 +138,5 @@ def compute_benchmark_summary(
         ttft_stats=ttft_stats,
         e2e_latency_stats=e2e_stats,
         tpot_stats=tpot_stats,
+        errors=errors if errors else None,
     )

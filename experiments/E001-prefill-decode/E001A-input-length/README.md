@@ -30,19 +30,19 @@ Every autoregressive inference request consists of two distinct phases:
 
 ## Hypothesis
 
-1. **TTFT Scaling**: TTFT will scale with prompt token length $P$. On modern GPU hardware with FlashAttention/FlashInfer, the scaling in the $128 \to 4096$ range will exhibit near-linear/sub-quadratic compute scaling.
-2. **TPOT Invariance**: TPOT will remain largely invariant across prompt lengths at batch size 1, because each decode step's latency is dominated by reading model weights ($14.2\text{ GB}$) from memory bandwidth, not the small KV cache read overhead.
-3. **E2E Latency**: E2E latency will increase by precisely the increase in TTFT, while the decode portion $(N_{\text{out}} - 1) \times \text{TPOT}$ remains constant.
-4. **GPU Memory**: VRAM usage will grow monotonically with prompt length due to KV cache block allocations.
+1. **TTFT Scaling**: TTFT will scale monotonically with prompt token length $P$. On modern GPU hardware with FlashAttention/FlashInfer, the scaling across the prompt token range will exhibit compute-bound scaling as parallel prefill matrix multiplications expand.
+2. **TPOT Invariance**: TPOT will remain largely invariant across prompt lengths at batch size 1, because each single-token decode step is dominated by loading model weights from memory bandwidth rather than the KV cache sequence length.
+3. **E2E Latency**: E2E latency will increase along with the growth in TTFT, while total decode time for a fixed output token count remains constant across prompt lengths.
+4. **GPU Memory**: VRAM usage will grow monotonically with prompt length due to additional KV cache memory block allocations.
 
 ---
 
-## Expected Behavior
+## Expected Behavior (Qualitative)
 
-- **TTFT**: ~`40 ms` at 128 tokens $\to$ ~`80-120 ms` at 512 tokens $\to$ ~`250-350 ms` at 2048 tokens $\to$ ~`500-700 ms` at 4096 tokens.
-- **TPOT**: Consistently flat across all context lengths at ~`19-21 ms/tok` ($\approx 48-52\text{ tok/s}$).
-- **E2E Latency**: Shifts upward by $\Delta\text{TTFT}$ with a fixed ~`2.5 s` decode baseline ($128\text{ output tokens} \times 20\text{ ms}$).
-- **VRAM**: Monotonic growth from ~`18.9 GB` to ~`20.5 GB`.
+- **TTFT**: Monotonically increases with prompt token count $P$ as prefill compute and attention operations scale.
+- **TPOT**: Remains flat and constant across all prompt lengths under sequential single-request execution.
+- **E2E Latency**: Shifts upward by the increase in TTFT while decode duration remains steady.
+- **VRAM**: Increases monotonically as longer prompt contexts require additional KV cache memory allocation.
 
 ---
 
@@ -55,7 +55,7 @@ Every autoregressive inference request consists of two distinct phases:
 | **Precision** | BF16 (16-bit brain floating point) | Default non-quantized baseline |
 | **Hardware** | 1× NVIDIA RTX 3090 (24 GB VRAM) | Fixed GPU target |
 | **Prefix Caching** | **DISABLED** (`--no-enable-prefix-caching`) | Prevents KV cache hit shortcuts across repeated runs |
-| **Chunked Prefill** | Fixed at `512` (`--max-num-batched-tokens 512`) | Recorded and held constant (not studied as a variable) |
+| **Chunked Prefill** | **DISABLED** (`--no-enable-chunked-prefill`) | Ensures pure, un-chunked full-prompt prefill measurement |
 | **Concurrency** | `1` (sequential execution) | Eliminates queuing and batch scheduling interference |
 | **Output Tokens ($N_{\text{out}}$)**| `128` (fixed) | Constant decode duration |
 | **Input Tokens ($P$)**| `[128, 512, 2048, 4096]` | 1D parameter sweep variable |
@@ -75,7 +75,8 @@ Every autoregressive inference request consists of two distinct phases:
   - Request concurrency ($1$)
   - GPU clock, driver, CUDA runtime, and host OS
   - Sampling parameters (greedy, $T=0.0$)
-  - Disabled prefix caching
+  - Disabled prefix caching (`--no-enable-prefix-caching`)
+  - Disabled chunked prefill (`--no-enable-chunked-prefill`)
 - **Dependent Variables (Metrics)**:
   - Time to First Token (TTFT, P50 & mean $\pm$ stddev)
   - End-to-End Latency (E2E, P50 & mean)
@@ -88,7 +89,15 @@ Every autoregressive inference request consists of two distinct phases:
 ## Running the Benchmark
 
 ```bash
-# Using the CLI sweep command:
+# 1. Start vLLM server with prefix caching and chunked prefill disabled:
+vllm serve Qwen/Qwen2.5-7B-Instruct \
+  --dtype bfloat16 \
+  --no-enable-prefix-caching \
+  --no-enable-chunked-prefill \
+  --port 18000 \
+  --gpu-memory-utilization 0.90
+
+# 2. Run the sweep using the CLI:
 inference-os sweep --config configs/e001a_input_scaling.yaml
 
 # Or running the standalone experiment script:
@@ -109,6 +118,6 @@ Generated artifacts:
 ## Limitations & Non-Proof Boundaries
 
 - **Does NOT prove decode scaling**: Output length is held fixed at 128 tokens; decode scaling is isolated in E001-B.
-- **Does NOT study chunked prefill**: Chunked prefill is held constant at 512 batched tokens to ensure reproducibility, but its impact is not varied or characterized here.
+- **Does NOT study chunked prefill**: Chunked prefill is disabled (`--no-enable-chunked-prefill`) to isolate un-chunked baseline prefill scaling.
 - **Does NOT study multi-tenant concurrency**: Concurrency is fixed at 1. Concurrent scheduling dynamics are isolated in E002.
 - **Hardware-Specific**: Results are specific to 1× NVIDIA RTX 3090 (Ampere architecture, 936 GB/s memory bandwidth) and should not be generalized to other GPU architectures without separate baseline characterization.

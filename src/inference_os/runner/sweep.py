@@ -79,21 +79,37 @@ async def execute_sweep(
             client=client,
         )
 
+        is_point_success = result.summary.successful_requests > 0
         point_summary_entry: dict[str, Any] = {
             "param_name": sweep_config.sweep_param,
             "param_value": param_val,
             "run_dir": str(run_dir),
+            "success": is_point_success,
             "benchmark": asdict(result.summary),
             "gpu": asdict(gpu_summary) if gpu_summary is not None else None,
         }
         point_results.append(point_summary_entry)
 
-    # 5. Persist sweep_summary.json
+    # 5. Aggregate metrics and determine sweep status
+    total_points = len(point_results)
+    successful_points = sum(1 for p in point_results if p.get("success", False))
+    failed_points = total_points - successful_points
+    sweep_status = (
+        "SUCCESS"
+        if successful_points == total_points
+        else ("PARTIAL" if successful_points > 0 else "FAILED")
+    )
+
+    # 6. Persist sweep_summary.json
     sweep_summary_payload: dict[str, Any] = {
         "sweep_run_id": sweep_run_id,
         "experiment_id": sweep_config.experiment_id,
+        "status": sweep_status,
         "sweep_param": sweep_config.sweep_param,
         "sweep_values": list(sweep_config.sweep_values),
+        "total_points": total_points,
+        "successful_points": successful_points,
+        "failed_points": failed_points,
         "base_config": sweep_config.base_config.to_dict(),
         "points": point_results,
     }
@@ -101,8 +117,8 @@ async def execute_sweep(
     with open(summary_file, "w", encoding="utf-8") as f:
         json.dump(sweep_summary_payload, f, indent=2)
 
-    # 6. Render plots
-    if generate_plots:
+    # 7. Render plots if at least one sweep point succeeded
+    if generate_plots and successful_points > 0:
         plots_dir = sweep_dir / "plots"
         generate_e001a_plots(point_results, plots_dir)
 

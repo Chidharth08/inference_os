@@ -166,3 +166,40 @@ def test_compute_benchmark_summary_partial_failures() -> None:
     assert summary.e2e_latency_stats is not None
     assert summary.e2e_latency_stats.count == 1
     assert summary.e2e_latency_stats.mean == pytest.approx(1.0)
+
+    # Errors should be preserved
+    assert summary.errors == ["HTTP 500"]
+
+
+def test_compute_benchmark_summary_all_failures() -> None:
+    """Verify metrics when all requests fail."""
+    m_fail1 = RequestMeasurement(
+        request_id="err-1",
+        start_time_ns=1_000_000_000,
+        completion_time_ns=1_100_000_000,
+        input_tokens=50,
+        output_tokens=0,
+        success=False,
+        error_message="Connection refused",
+    )
+    m_fail2 = RequestMeasurement(
+        request_id="err-2",
+        start_time_ns=2_000_000_000,
+        completion_time_ns=2_100_000_000,
+        input_tokens=50,
+        output_tokens=0,
+        success=False,
+        error_message="HTTP 502",
+    )
+
+    summary = compute_benchmark_summary([m_fail1, m_fail2], total_duration_seconds=1.0)
+    assert summary.total_requests == 2
+    assert summary.successful_requests == 0
+    assert summary.failed_requests == 2
+    assert summary.request_throughput == 0.0
+    assert summary.output_token_throughput == 0.0
+    assert summary.ttft_stats is None
+    assert summary.e2e_latency_stats is None
+    assert summary.tpot_stats is None
+    assert summary.errors == ["Connection refused", "HTTP 502"]
+

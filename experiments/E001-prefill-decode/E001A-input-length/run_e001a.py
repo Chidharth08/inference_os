@@ -48,28 +48,41 @@ def format_ms(val_seconds: float | None) -> str:
 
 def print_sweep_table(points: list[dict[str, Any]]) -> None:
     """Print ASCII comparison table across all sweep points."""
-    print("=" * 95)
+    print("=" * 105)
     print(" E001-A: INPUT LENGTH SCALING RESULTS SUMMARY")
-    print("=" * 95)
+    print("=" * 105)
     header = (
-        f"{'Prompt Tokens':<14} | {'TTFT (P50)':<12} | {'TTFT (Mean)':<12} | "
+        f"{'Prompt Tokens':<14} | {'Status':<8} | {'TTFT (P50)':<12} | {'TTFT (Mean)':<12} | "
         f"{'TPOT (P50)':<12} | {'E2E (P50)':<12} | {'Peak VRAM':<12} | {'GPU Util':<8}"
     )
     print(header)
-    print("-" * 95)
+    print("-" * 105)
 
     for pt in sorted(points, key=lambda x: x["param_value"]):
         p_val = pt["param_value"]
         bench = pt.get("benchmark", {})
+        succ_reqs = bench.get("successful_requests", 0)
+        tot_reqs = bench.get("total_requests", 0)
+        is_point_ok = pt.get("success", succ_reqs > 0)
+
+        status_str = "OK" if is_point_ok else f"FAIL ({succ_reqs}/{tot_reqs})"
         ttft_s = bench.get("ttft_stats")
         tpot_s = bench.get("tpot_stats")
         e2e_s = bench.get("e2e_latency_stats")
         gpu_s = pt.get("gpu")
 
-        ttft_p50_str = format_ms(ttft_s["p50"]) if ttft_s else "N/A"
-        ttft_mean_str = format_ms(ttft_s["mean"]) if ttft_s else "N/A"
-        tpot_p50_str = format_ms(tpot_s["p50"]) if tpot_s else "N/A"
-        e2e_p50_str = format_ms(e2e_s["p50"]) if e2e_s else "N/A"
+        ttft_p50_str = (
+            format_ms(ttft_s["p50"]) if ttft_s else ("FAILED" if not is_point_ok else "N/A")
+        )
+        ttft_mean_str = (
+            format_ms(ttft_s["mean"]) if ttft_s else ("FAILED" if not is_point_ok else "N/A")
+        )
+        tpot_p50_str = (
+            format_ms(tpot_s["p50"]) if tpot_s else ("FAILED" if not is_point_ok else "N/A")
+        )
+        e2e_p50_str = (
+            format_ms(e2e_s["p50"]) if e2e_s else ("FAILED" if not is_point_ok else "N/A")
+        )
 
         vram_val = (
             f"{gpu_s['peak_memory_used_mb']:.0f} MiB"
@@ -83,13 +96,13 @@ def print_sweep_table(points: list[dict[str, Any]]) -> None:
         )
 
         row = (
-            f"{p_val:<14} | {ttft_p50_str:<12} | {ttft_mean_str:<12} | "
+            f"{p_val:<14} | {status_str:<8} | {ttft_p50_str:<12} | {ttft_mean_str:<12} | "
             f"{tpot_p50_str:<12} | {e2e_p50_str:<12} | "
             f"{vram_val:<12} | {gpu_util_str:<8}"
         )
         print(row)
 
-    print("=" * 95)
+    print("=" * 105)
 
 
 async def main_async(args: argparse.Namespace) -> int:
@@ -115,6 +128,16 @@ async def main_async(args: argparse.Namespace) -> int:
         base_cfg = replace(sweep_config.base_config, **overrides)
         sweep_config = replace(sweep_config, base_config=base_cfg)
 
+    prefix_cache_status = (
+        "disabled" if not sweep_config.base_config.enable_prefix_caching else "enabled"
+    )
+    chunked_prefill_status = (
+        "disabled"
+        if not sweep_config.base_config.enable_chunked_prefill
+        and sweep_config.base_config.chunked_prefill is None
+        else f"{sweep_config.base_config.chunked_prefill}"
+    )
+
     print("=" * 75)
     print(" inference_os — E001-A Input Length Scaling Experiment")
     print("=" * 75)
@@ -124,8 +147,8 @@ async def main_async(args: argparse.Namespace) -> int:
     print(f" Sweep Values:        {list(sweep_config.sweep_values)}")
     print(f" Fixed Output Tokens: {sweep_config.base_config.max_output_tokens}")
     print(" Concurrency:         1 (sequential)")
-    print(f" Prefix Caching:      {sweep_config.base_config.enable_prefix_caching}")
-    print(f" Chunked Prefill:     {sweep_config.base_config.chunked_prefill}")
+    print(f" Prefix Caching:      {sweep_config.base_config.enable_prefix_caching} ({prefix_cache_status})")
+    print(f" Chunked Prefill:     {sweep_config.base_config.enable_chunked_prefill} ({chunked_prefill_status})")
     print(f" Measured Requests:   {sweep_config.base_config.num_requests}")
     print(f" Warm-up Requests:    {sweep_config.base_config.warmup_requests}")
 
@@ -134,15 +157,41 @@ async def main_async(args: argparse.Namespace) -> int:
 
     sweep_dir, point_results = await execute_sweep(sweep_config)
 
+    successful_points = sum(
+        1 for p in point_results if p.get("benchmark", {}).get("successful_requests", 0) > 0
+    )
+    total_points = len(point_results)
+
     print("-" * 75)
-    print(" Sweep Execution Completed Successfully!")
+    if successful_points == 0:
+        print(" [ERROR] Sweep Execution Failed: All sweep points encountered 0 successful requests!")
+        # Collect and print sample error
+        sample_errors = []
+        for p in point_results:
+            errs = p.get("benchmark", {}).get("errors") or []
+            sample_errors.extend(errs)
+        if sample_errors:
+            print(f" Sample Error: {sample_errors[0]}")
+        print()
+        print_sweep_table(point_results)
+        print()
+        print(f" Artifacts & Error Logs:       {Path(sweep_dir).resolve()}")
+        print("=" * 75)
+        return 1
+
+    if successful_points < total_points:
+        print(f" [WARNING] Sweep Execution Completed with Failures: {total_points - successful_points}/{total_points} points failed.")
+    else:
+        print(" Sweep Execution Completed Successfully!")
+
     print()
     print_sweep_table(point_results)
     print()
     print(f" Artifacts & Raw Measurements: {Path(sweep_dir).resolve()}")
-    print(f" Rendered Plots Directory:     {Path(sweep_dir / 'plots').resolve()}")
+    if (Path(sweep_dir) / "plots").exists():
+        print(f" Rendered Plots Directory:     {Path(sweep_dir / 'plots').resolve()}")
     print("=" * 75)
-    return 0
+    return 0 if successful_points == total_points else 1
 
 
 def main() -> int:
