@@ -52,8 +52,9 @@ def print_sweep_table(points: list[dict[str, Any]]) -> None:
     print(" E001-A: INPUT LENGTH SCALING RESULTS SUMMARY")
     print("=" * 105)
     header = (
-        f"{'Prompt Tokens':<14} | {'Status':<8} | {'TTFT (P50)':<12} | {'TTFT (Mean)':<12} | "
-        f"{'TPOT (P50)':<12} | {'E2E (P50)':<12} | {'Peak VRAM':<12} | {'GPU Util':<8}"
+        f"{'Prompt Tokens':<14} | {'Status':<8} | {'TTFT (P50)':<12} | "
+        f"{'TTFT (Mean)':<12} | {'TPOT (P50)':<12} | {'E2E (P50)':<12} | "
+        f"{'Peak VRAM':<12} | {'GPU Util':<8}"
     )
     print(header)
     print("-" * 105)
@@ -72,16 +73,24 @@ def print_sweep_table(points: list[dict[str, Any]]) -> None:
         gpu_s = pt.get("gpu")
 
         ttft_p50_str = (
-            format_ms(ttft_s["p50"]) if ttft_s else ("FAILED" if not is_point_ok else "N/A")
+            format_ms(ttft_s["p50"])
+            if ttft_s
+            else ("FAILED" if not is_point_ok else "N/A")
         )
         ttft_mean_str = (
-            format_ms(ttft_s["mean"]) if ttft_s else ("FAILED" if not is_point_ok else "N/A")
+            format_ms(ttft_s["mean"])
+            if ttft_s
+            else ("FAILED" if not is_point_ok else "N/A")
         )
         tpot_p50_str = (
-            format_ms(tpot_s["p50"]) if tpot_s else ("FAILED" if not is_point_ok else "N/A")
+            format_ms(tpot_s["p50"])
+            if tpot_s
+            else ("FAILED" if not is_point_ok else "N/A")
         )
         e2e_p50_str = (
-            format_ms(e2e_s["p50"]) if e2e_s else ("FAILED" if not is_point_ok else "N/A")
+            format_ms(e2e_s["p50"])
+            if e2e_s
+            else ("FAILED" if not is_point_ok else "N/A")
         )
 
         vram_val = (
@@ -96,8 +105,8 @@ def print_sweep_table(points: list[dict[str, Any]]) -> None:
         )
 
         row = (
-            f"{p_val:<14} | {status_str:<8} | {ttft_p50_str:<12} | {ttft_mean_str:<12} | "
-            f"{tpot_p50_str:<12} | {e2e_p50_str:<12} | "
+            f"{p_val:<14} | {status_str:<8} | {ttft_p50_str:<12} | "
+            f"{ttft_mean_str:<12} | {tpot_p50_str:<12} | {e2e_p50_str:<12} | "
             f"{vram_val:<12} | {gpu_util_str:<8}"
         )
         print(row)
@@ -120,6 +129,7 @@ async def main_async(args: argparse.Namespace) -> int:
     sweep_config = loaded
     if args.base_url or args.output_dir:
         from dataclasses import replace
+
         overrides = {}
         if args.base_url:
             overrides["base_url"] = args.base_url
@@ -147,8 +157,10 @@ async def main_async(args: argparse.Namespace) -> int:
     print(f" Sweep Values:        {list(sweep_config.sweep_values)}")
     print(f" Fixed Output Tokens: {sweep_config.base_config.max_output_tokens}")
     print(" Concurrency:         1 (sequential)")
-    print(f" Prefix Caching:      {sweep_config.base_config.enable_prefix_caching} ({prefix_cache_status})")
-    print(f" Chunked Prefill:     {sweep_config.base_config.enable_chunked_prefill} ({chunked_prefill_status})")
+    prefix_val = sweep_config.base_config.enable_prefix_caching
+    chunked_val = sweep_config.base_config.enable_chunked_prefill
+    print(f" Prefix Caching:      {prefix_val} ({prefix_cache_status})")
+    print(f" Chunked Prefill:     {chunked_val} ({chunked_prefill_status})")
     print(f" Measured Requests:   {sweep_config.base_config.num_requests}")
     print(f" Warm-up Requests:    {sweep_config.base_config.warmup_requests}")
 
@@ -158,13 +170,18 @@ async def main_async(args: argparse.Namespace) -> int:
     sweep_dir, point_results = await execute_sweep(sweep_config)
 
     successful_points = sum(
-        1 for p in point_results if p.get("benchmark", {}).get("successful_requests", 0) > 0
+        1
+        for p in point_results
+        if p.get("benchmark", {}).get("successful_requests", 0) > 0
     )
     total_points = len(point_results)
 
     print("-" * 75)
     if successful_points == 0:
-        print(" [ERROR] Sweep Execution Failed: All sweep points encountered 0 successful requests!")
+        print(
+            " [ERROR] Sweep Execution Failed: All sweep points encountered 0 "
+            "successful requests!"
+        )
         # Collect and print sample error
         sample_errors = []
         for p in point_results:
@@ -180,7 +197,11 @@ async def main_async(args: argparse.Namespace) -> int:
         return 1
 
     if successful_points < total_points:
-        print(f" [WARNING] Sweep Execution Completed with Failures: {total_points - successful_points}/{total_points} points failed.")
+        failed_count = total_points - successful_points
+        print(
+            f" [WARNING] Sweep Execution Completed with Failures: "
+            f"{failed_count}/{total_points} points failed."
+        )
     else:
         print(" Sweep Execution Completed Successfully!")
 

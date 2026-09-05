@@ -133,6 +133,7 @@ enable_chunked_prefill: false
 def test_load_e001a_actual_config_file() -> None:
     """Verify loading the actual repository configs/e001a_input_scaling.yaml."""
     from pathlib import Path
+
     from inference_os.config import load_config
 
     config_path = Path("configs/e001a_input_scaling.yaml")
@@ -145,5 +146,3 @@ def test_load_e001a_actual_config_file() -> None:
     assert cfg.base_config.base_url == "http://localhost:18000"
     assert cfg.base_config.enable_prefix_caching is False
     assert cfg.base_config.enable_chunked_prefill is False
-
-

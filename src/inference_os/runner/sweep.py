@@ -71,6 +71,7 @@ async def execute_sweep(
 
         # Ensure output directory for point is set
         from dataclasses import replace
+
         point_cfg_with_dir = replace(point_cfg, output_dir=str(point_output_dir))
 
         run_dir, result, gpu_summary = await execute_benchmark(

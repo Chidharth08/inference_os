@@ -362,8 +362,8 @@ Every benchmark measurement needs three precise timestamps:
 @dataclass(frozen=True, slots=True)
 class RequestMeasurement:
     request_id: str
-    start_time_ns: int            # Nanosecond monotonic timestamp
-    completion_time_ns: int       # Nanosecond monotonic timestamp
+    start_time_ns: int  # Nanosecond monotonic timestamp
+    completion_time_ns: int  # Nanosecond monotonic timestamp
     input_tokens: int
     output_tokens: int
     success: bool
@@ -382,6 +382,7 @@ class RequestMeasurement:
 @property
 def ttft_seconds(self) -> Optional[float]:
     return (self.first_token_time_ns - self.start_time_ns) / 1_000_000_000.0
+
 
 @property
 def e2e_latency_seconds(self) -> float:
@@ -402,16 +403,16 @@ async def run_single_request(
 
 **The timing logic**:
 ```python
-start_time_ns = clock_fn()                    # ← Record start
+start_time_ns = clock_fn()  # ← Record start
 first_token_time_ns = None
 observed_chunks = 0
 
-async for _ in stream:                         # ← Consume each token
+async for _ in stream:  # ← Consume each token
     if first_token_time_ns is None:
-        first_token_time_ns = clock_fn()       # ← First token!
+        first_token_time_ns = clock_fn()  # ← First token!
     observed_chunks += 1
 
-completion_time_ns = clock_fn()                # ← All tokens received
+completion_time_ns = clock_fn()  # ← All tokens received
 ```
 
 **Why `clock_fn` as a parameter?** This is **dependency injection** for the clock. In production, we use `time.perf_counter_ns` (the highest-resolution monotonic clock available). In tests, we inject a fake clock that returns predetermined values, so we can verify exact timing calculations without sleeping or dealing with real-time variability.
@@ -460,8 +461,7 @@ Phase 2: MEASURED (N=10 requests, timed for summary)
 
 ```python
 RequestFactory = Callable[
-    [str, int, bool],
-    Awaitable[tuple[AsyncIterable[Any], int, Optional[int]]]
+    [str, int, bool], Awaitable[tuple[AsyncIterable[Any], int, Optional[int]]]
 ]
 ```
 
@@ -472,9 +472,9 @@ This is a callable that takes `(request_id, index, is_warmup)` and returns `(str
 @dataclass(frozen=True, slots=True)
 class BenchmarkResult:
     warmup_measurements: Sequence[RequestMeasurement]  # Cold data (kept!)
-    measured_requests: Sequence[RequestMeasurement]     # Reported data
-    summary: BenchmarkSummary                           # Stats from measured only
-    warmup_summary: Optional[BenchmarkSummary]          # Stats from warmup (for comparison)
+    measured_requests: Sequence[RequestMeasurement]  # Reported data
+    summary: BenchmarkSummary  # Stats from measured only
+    warmup_summary: Optional[BenchmarkSummary]  # Stats from warmup (for comparison)
 ```
 
 ---
@@ -495,10 +495,10 @@ class BenchmarkResult:
 ```python
 def _calculate_percentile(sorted_values, percentile):
     n = len(sorted_values)
-    rank = (percentile / 100.0) * (n - 1)     # Continuous rank
-    lower_idx = math.floor(rank)               # Integer part
-    upper_idx = math.ceil(rank)                # Next integer
-    weight = rank - lower_idx                  # Fractional part
+    rank = (percentile / 100.0) * (n - 1)  # Continuous rank
+    lower_idx = math.floor(rank)  # Integer part
+    upper_idx = math.ceil(rank)  # Next integer
+    weight = rank - lower_idx  # Fractional part
 
     return (1.0 - weight) * sorted_values[lower_idx] + weight * sorted_values[upper_idx]
 ```
@@ -523,7 +523,7 @@ We divide by `n-1` (not `n`) because we're computing a **sample standard deviati
 #### Throughput Calculations
 
 ```python
-request_throughput = successful_count / total_duration_seconds      # req/s
+request_throughput = successful_count / total_duration_seconds  # req/s
 output_token_throughput = total_output_tokens / total_duration_seconds  # tok/s
 ```
 
@@ -548,9 +548,9 @@ Latency numbers alone don't tell the full story. You need to know:
 @dataclass(frozen=True, slots=True)
 class GPUSample:
     timestamp_ns: int
-    memory_used_mb: int          # VRAM currently allocated
-    memory_total_mb: int         # Total VRAM on device
-    utilization_gpu_pct: int     # SM compute utilization (0-100)
+    memory_used_mb: int  # VRAM currently allocated
+    memory_total_mb: int  # Total VRAM on device
+    utilization_gpu_pct: int  # SM compute utilization (0-100)
     utilization_memory_pct: Optional[int] = None  # Memory bus utilization
 ```
 
@@ -589,13 +589,13 @@ If you can't reproduce a benchmark result, it's not science. Six months from now
 ```python
 @dataclass(frozen=True, slots=True)
 class EnvironmentMetadata:
-    timestamp_utc: str           # When the snapshot was taken
-    hostname: str                # Machine name
-    os_name: str                 # "Linux" / "Windows"
-    os_release: str              # Kernel version
-    python_version: str          # "3.11.15"
-    git: GitMetadata             # Commit SHA, branch, dirty status
-    gpu: Optional[GPUMetadata]   # GPU name, driver, CUDA, VRAM
+    timestamp_utc: str  # When the snapshot was taken
+    hostname: str  # Machine name
+    os_name: str  # "Linux" / "Windows"
+    os_release: str  # Kernel version
+    python_version: str  # "3.11.15"
+    git: GitMetadata  # Commit SHA, branch, dirty status
+    gpu: Optional[GPUMetadata]  # GPU name, driver, CUDA, VRAM
     packages: Optional[dict[str, str]]  # Library versions
 ```
 
@@ -648,17 +648,25 @@ async def execute_benchmark(config, tokenizer=None, client=None):
 
     # 3. Create the request factory closure
     async def request_factory(request_id, index, is_warmup):
-        stream = vllm_stream_completion(config.model, prompt, config.max_output_tokens, ...)
+        stream = vllm_stream_completion(
+            config.model, prompt, config.max_output_tokens, ...
+        )
         return stream, actual_input_tokens, None
 
     # 4. Run benchmark with background GPU sampling
-    sampler = GPUTelemetrySampler(config.telemetry_interval_seconds, config.device_index)
+    sampler = GPUTelemetrySampler(
+        config.telemetry_interval_seconds, config.device_index
+    )
     async with sampler:
-        result = await run_sequential_benchmark(request_factory, config.num_requests, config.warmup_requests)
+        result = await run_sequential_benchmark(
+            request_factory, config.num_requests, config.warmup_requests
+        )
 
     # 5. Capture environment, save to disk
     environment = capture_environment()
-    run_dir = save_benchmark_run(config, environment, result, sampler.get_summary(), sampler.get_samples())
+    run_dir = save_benchmark_run(
+        config, environment, result, sampler.get_summary(), sampler.get_samples()
+    )
 
     return run_dir, result, gpu_summary
 ```
@@ -674,7 +682,7 @@ async def execute_benchmark(config, tokenizer=None, client=None):
 ```python
 @dataclass(frozen=True, slots=True)
 class BenchmarkConfig:
-    model: str                                 # Required, no default
+    model: str  # Required, no default
     base_url: str = "http://localhost:8000"
     prompt_tokens: int = 128
     max_output_tokens: int = 64

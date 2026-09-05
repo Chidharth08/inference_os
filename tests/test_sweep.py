@@ -91,7 +91,7 @@ def test_execute_sweep_mock(tmp_path: Path) -> None:
 
 
 def test_execute_sweep_all_failed(tmp_path: Path) -> None:
-    """Verify that a sweep with failing requests records failure status and preserves errors."""
+    """Verify that a failing sweep records failure status and preserves errors."""
 
     def mock_sse_error_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(500, text="Internal Server Error: Out of Memory")
@@ -154,11 +154,13 @@ def test_execute_sweep_all_failed(tmp_path: Path) -> None:
             for line in lines:
                 assert line["success"] is False
                 assert line["error_message"] is not None
-                assert "500" in line["error_message"] or "Internal Server Error" in line["error_message"]
+                assert (
+                    "500" in line["error_message"]
+                    or "Internal Server Error" in line["error_message"]
+                )
 
         # No plots should be generated when all points fail
         plots_dir = sweep_dir / "plots"
         assert not plots_dir.exists()
 
     asyncio.run(_run())
-

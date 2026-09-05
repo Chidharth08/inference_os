@@ -124,7 +124,6 @@ def test_compute_benchmark_summary_success_and_throughput() -> None:
     assert summary.tpot_stats.mean == pytest.approx(expected_tpot_mean)
 
 
-
 def test_compute_benchmark_summary_partial_failures() -> None:
     """Verify failed requests are excluded from latency metrics and counted properly."""
     m_success = RequestMeasurement(
@@ -202,4 +201,3 @@ def test_compute_benchmark_summary_all_failures() -> None:
     assert summary.e2e_latency_stats is None
     assert summary.tpot_stats is None
     assert summary.errors == ["Connection refused", "HTTP 502"]
-

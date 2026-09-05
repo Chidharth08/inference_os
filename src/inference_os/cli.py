@@ -134,7 +134,10 @@ def main(args: Sequence[str] | None = None) -> int:
 
         run_dir, result, _ = asyncio.run(execute_benchmark(config))
         if result.summary.successful_requests == 0:
-            print(f"Benchmark failed: 0/{result.summary.total_requests} requests succeeded. Run saved to: {run_dir}")
+            tot = result.summary.total_requests
+            print(
+                f"Benchmark failed: 0/{tot} requests succeeded. Run saved to: {run_dir}"
+            )
             return 1
 
         print(f"Benchmark completed successfully! Run saved to: {run_dir}")
@@ -170,8 +173,8 @@ def main(args: Sequence[str] | None = None) -> int:
 
         if successful_points < total_points:
             print(
-                f"Parameter sweep partially completed ({successful_points}/{total_points} passed). "
-                f"Saved to: {sweep_dir}"
+                f"Parameter sweep partially completed "
+                f"({successful_points}/{total_points} passed). Saved to: {sweep_dir}"
             )
             return 1
 
@@ -188,4 +191,3 @@ def main(args: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

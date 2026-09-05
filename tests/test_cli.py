@@ -26,4 +26,3 @@ def test_cli_sweep_help(capsys: pytest.CaptureFixture[str]) -> None:
 
     captured = capsys.readouterr()
     assert "--config" in captured.out
-

@@ -39,7 +39,6 @@ def test_tpot_single_output_token_returns_none() -> None:
     assert req.tpot_seconds is None
 
 
-
 def test_absent_first_token_timestamp() -> None:
     """Verify behavior when no first token timestamp exists (e.g. failed prefill)."""
     req = RequestMeasurement(

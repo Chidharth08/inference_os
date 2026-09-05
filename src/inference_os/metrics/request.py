@@ -81,4 +81,3 @@ class RequestMeasurement:
         decode_tokens = self.output_tokens - 1
         decode_time_ns = self.completion_time_ns - self.first_token_time_ns
         return (decode_time_ns / decode_tokens) / NANOSECONDS_PER_SECOND
-

@@ -133,9 +133,7 @@ class SweepConfig:
             raise ValueError("sweep_values cannot be empty")
         for val in self.sweep_values:
             if val <= 0:
-                raise ValueError(
-                    f"sweep_values entries must be positive, got {val}"
-                )
+                raise ValueError(f"sweep_values entries must be positive, got {val}")
 
     def generate_point_configs(self) -> list[tuple[int, BenchmarkConfig]]:
         """Generate a list of (sweep_value, point_config) pairs."""
