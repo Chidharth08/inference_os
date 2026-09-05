@@ -1,0 +1,24 @@
+# E001-B Experiment Configuration: Output Length (Decode) Scaling
+# Evaluates decode scaling (TPOT, E2E latency), KV cache growth, and memory
+# across output token lengths holding prompt tokens and concurrency constant.
+
+experiment_id: E001B
+sweep_param: max_output_tokens
+sweep_values:
+  - 32
+  - 128
+  - 512
+  - 1024
+
+model: Qwen/Qwen2.5-7B-Instruct
+base_url: http://localhost:18000
+prompt_tokens: 128
+num_requests: 10
+warmup_requests: 2
+seed: 42
+temperature: 0.0
+enable_prefix_caching: false
+enable_chunked_prefill: false
+telemetry_interval_seconds: 0.1
+device_index: 0
+output_dir: runs

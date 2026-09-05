@@ -12,7 +12,7 @@ from typing import Any, Optional
 import httpx
 
 from inference_os.config import SweepConfig
-from inference_os.reports.plots import generate_e001a_plots
+from inference_os.reports.plots import generate_e001a_plots, generate_e001b_plots
 from inference_os.runner.engine import execute_benchmark
 from inference_os.workloads.base import Tokenizer
 from inference_os.workloads.hf_tokenizer import HFTokenizer
@@ -121,6 +121,12 @@ async def execute_sweep(
     # 7. Render plots if at least one sweep point succeeded
     if generate_plots and successful_points > 0:
         plots_dir = sweep_dir / "plots"
-        generate_e001a_plots(point_results, plots_dir)
+        if (
+            sweep_config.experiment_id.upper().startswith("E001B")
+            or sweep_config.sweep_param == "max_output_tokens"
+        ):
+            generate_e001b_plots(point_results, plots_dir)
+        else:
+            generate_e001a_plots(point_results, plots_dir)
 
     return sweep_dir, point_results

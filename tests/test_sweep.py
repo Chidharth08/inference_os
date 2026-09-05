@@ -164,3 +164,56 @@ def test_execute_sweep_all_failed(tmp_path: Path) -> None:
         assert not plots_dir.exists()
 
     asyncio.run(_run())
+
+
+def test_execute_sweep_e001b_mock(tmp_path: Path) -> None:
+    """Verify complete 1D sweep for E001-B (output tokens) generates E001-B plots."""
+
+    def mock_sse_handler(request: httpx.Request) -> httpx.Response:
+        content = (
+            'data: {"choices": [{"text": "Hello"}]}\n\n'
+            'data: {"choices": [{"text": " World"}]}\n\n'
+            "data: [DONE]\n\n"
+        )
+        return httpx.Response(200, text=content)
+
+    transport = httpx.MockTransport(mock_sse_handler)
+    client = httpx.AsyncClient(transport=transport)
+    tokenizer = MockWordTokenizer()
+
+    base_config = BenchmarkConfig(
+        model="test-model",
+        prompt_tokens=16,
+        num_requests=2,
+        warmup_requests=1,
+        seed=42,
+        output_dir=str(tmp_path),
+    )
+
+    sweep_config = SweepConfig(
+        sweep_param="max_output_tokens",
+        sweep_values=(32, 64),
+        base_config=base_config,
+        experiment_id="E001B_TEST",
+    )
+
+    async def _run() -> None:
+        sweep_dir, point_results = await execute_sweep(
+            sweep_config=sweep_config,
+            tokenizer=tokenizer,
+            client=client,
+            generate_plots=True,
+        )
+
+        assert sweep_dir.is_dir()
+        assert len(point_results) == 2
+        assert (sweep_dir / "max_output_tokens_32").is_dir()
+        assert (sweep_dir / "max_output_tokens_64").is_dir()
+
+        plots_dir = sweep_dir / "plots"
+        assert plots_dir.is_dir()
+        assert (plots_dir / "ttft_vs_output_tokens.png").exists()
+        assert (plots_dir / "e2e_vs_output_tokens.png").exists()
+        assert (plots_dir / "tpot_vs_output_tokens.png").exists()
+
+    asyncio.run(_run())
