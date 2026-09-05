@@ -405,9 +405,9 @@ In E000, we ran a single configuration (128 prompt, 64 output). In E001, we need
 ```python
 @dataclass(frozen=True, slots=True)
 class SweepConfig:
-    sweep_param: str           # "prompt_tokens" or "max_output_tokens"
+    sweep_param: str  # "prompt_tokens" or "max_output_tokens"
     sweep_values: tuple[int, ...]  # (128, 512, 2048, 4096)
-    base_config: BenchmarkConfig   # Everything else held constant
+    base_config: BenchmarkConfig  # Everything else held constant
     experiment_id: str = "E001A"
 ```
 
