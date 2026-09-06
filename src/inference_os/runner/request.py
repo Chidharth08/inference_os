@@ -13,7 +13,7 @@ async def run_single_request(
     request_id: str,
     stream: AsyncIterable[T],
     input_tokens: int,
-    output_tokens: Optional[int] = None,
+    output_tokens: Optional[int | Callable[[], int]] = None,
     clock_fn: ClockFn = time.perf_counter_ns,
 ) -> RequestMeasurement:
     """Consume an async stream of outputs and record lifecycle timestamps.
@@ -22,8 +22,8 @@ async def run_single_request(
         request_id: Unique identifier for the request.
         stream: Async iterable yielding output chunks.
         input_tokens: Number of prompt/input tokens.
-        output_tokens: Optional explicit output token count. If None, defaults to
-            the number of observed stream chunks.
+        output_tokens: Optional explicit output token count or callable returning
+            token count. If None, defaults to the number of observed stream chunks.
         clock_fn: Callable returning current monotonic time in nanoseconds.
             Defaults to time.perf_counter_ns.
 
@@ -47,9 +47,15 @@ async def run_single_request(
     finally:
         completion_time_ns = clock_fn()
 
-    final_output_tokens = (
-        output_tokens if output_tokens is not None else observed_chunks
-    )
+    if callable(output_tokens):
+        try:
+            final_output_tokens = output_tokens()
+        except Exception:
+            final_output_tokens = observed_chunks
+    elif output_tokens is not None:
+        final_output_tokens = output_tokens
+    else:
+        final_output_tokens = observed_chunks
 
     return RequestMeasurement(
         request_id=request_id,

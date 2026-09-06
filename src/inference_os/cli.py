@@ -76,6 +76,12 @@ def create_parser() -> argparse.ArgumentParser:
         help="Sampling temperature",
     )
     run_parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=1,
+        help="Maximum concurrent in-flight requests",
+    )
+    run_parser.add_argument(
         "--output-dir",
         type=str,
         default="runs",
@@ -128,6 +134,7 @@ def main(args: Sequence[str] | None = None) -> int:
                 warmup_requests=parsed_args.warmup_requests,
                 seed=parsed_args.seed,
                 temperature=parsed_args.temperature,
+                concurrency=parsed_args.concurrency,
                 experiment_id=parsed_args.experiment_id,
                 output_dir=parsed_args.output_dir,
             )

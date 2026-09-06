@@ -29,6 +29,7 @@ class BenchmarkConfig:
     enable_prefix_caching: bool = False
     chunked_prefill: Optional[int] = None
     enable_chunked_prefill: bool = False
+    concurrency: int = 1
 
     def __post_init__(self) -> None:
         """Validate configuration invariants."""
@@ -48,6 +49,8 @@ class BenchmarkConfig:
             raise ValueError(
                 f"warmup_requests cannot be negative, got {self.warmup_requests}"
             )
+        if self.concurrency <= 0:
+            raise ValueError(f"concurrency must be positive, got {self.concurrency}")
         if self.telemetry_interval_seconds <= 0:
             raise ValueError(
                 "telemetry_interval_seconds must be positive, got "
@@ -91,6 +94,7 @@ class BenchmarkConfig:
             "enable_prefix_caching",
             "chunked_prefill",
             "enable_chunked_prefill",
+            "concurrency",
         }
         filtered_data = {k: v for k, v in data.items() if k in known_keys}
         return cls(**filtered_data)
@@ -123,7 +127,12 @@ class SweepConfig:
         """Validate sweep invariants."""
         if not self.sweep_param or not self.sweep_param.strip():
             raise ValueError("sweep_param cannot be empty")
-        valid_params = {"prompt_tokens", "max_output_tokens", "num_requests"}
+        valid_params = {
+            "prompt_tokens",
+            "max_output_tokens",
+            "num_requests",
+            "concurrency",
+        }
         if self.sweep_param not in valid_params:
             options_str = sorted(valid_params)
             raise ValueError(
