@@ -1,0 +1,27 @@
+# E002 Canonical Experiment Configuration: Concurrency Scaling
+# Evaluates closed-loop concurrency scaling across [1, 2, 4, 8, 16, 32]
+# with 100 requests per point holding input tokens (512) and output tokens (128) constant.
+
+experiment_id: E002
+sweep_param: concurrency
+sweep_values:
+  - 1
+  - 2
+  - 4
+  - 8
+  - 16
+  - 32
+
+model: Qwen/Qwen2.5-7B-Instruct
+base_url: http://localhost:18000
+prompt_tokens: 512
+max_output_tokens: 128
+num_requests: 100
+warmup_requests: 2
+seed: 42
+temperature: 0.0
+enable_prefix_caching: false
+enable_chunked_prefill: false
+telemetry_interval_seconds: 0.1
+device_index: 0
+output_dir: runs

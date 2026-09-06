@@ -34,6 +34,7 @@ class BenchmarkSummary:
     total_duration_seconds: float
     request_throughput: float
     output_token_throughput: float
+    error_rate: float = 0.0
     ttft_stats: Optional[MetricStats] = None
     e2e_latency_stats: Optional[MetricStats] = None
     tpot_stats: Optional[MetricStats] = None
@@ -126,6 +127,8 @@ def compute_benchmark_summary(
         if not m.success and m.error_message is not None
     ]
 
+    error_rate = failed_requests / total_requests if total_requests > 0 else 0.0
+
     return BenchmarkSummary(
         total_requests=total_requests,
         successful_requests=len(successful),
@@ -135,6 +138,7 @@ def compute_benchmark_summary(
         total_duration_seconds=total_duration_seconds,
         request_throughput=request_throughput,
         output_token_throughput=output_token_throughput,
+        error_rate=error_rate,
         ttft_stats=ttft_stats,
         e2e_latency_stats=e2e_stats,
         tpot_stats=tpot_stats,

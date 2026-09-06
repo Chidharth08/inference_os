@@ -217,3 +217,68 @@ def test_execute_sweep_e001b_mock(tmp_path: Path) -> None:
         assert (plots_dir / "tpot_vs_output_tokens.png").exists()
 
     asyncio.run(_run())
+
+
+def test_execute_sweep_concurrency_mock(tmp_path: Path) -> None:
+    """Verify complete 1D sweep for E002 (concurrency) generates E002 plots."""
+
+    def mock_sse_handler(request: httpx.Request) -> httpx.Response:
+        content = (
+            'data: {"choices": [{"text": "Hello"}]}\n\n'
+            'data: {"choices": [{"text": " World"}]}\n\n'
+            "data: [DONE]\n\n"
+        )
+        return httpx.Response(200, text=content)
+
+    transport = httpx.MockTransport(mock_sse_handler)
+    client = httpx.AsyncClient(transport=transport)
+    tokenizer = MockWordTokenizer()
+
+    base_config = BenchmarkConfig(
+        model="test-model",
+        prompt_tokens=16,
+        max_output_tokens=10,
+        num_requests=4,
+        warmup_requests=1,
+        seed=42,
+        output_dir=str(tmp_path),
+    )
+
+    sweep_config = SweepConfig(
+        sweep_param="concurrency",
+        sweep_values=(1, 2),
+        base_config=base_config,
+        experiment_id="E002_TEST",
+    )
+
+    async def _run() -> None:
+        sweep_dir, point_results = await execute_sweep(
+            sweep_config=sweep_config,
+            tokenizer=tokenizer,
+            client=client,
+            generate_plots=True,
+        )
+
+        assert sweep_dir.is_dir()
+        assert len(point_results) == 2
+        assert (sweep_dir / "concurrency_1").is_dir()
+        assert (sweep_dir / "concurrency_2").is_dir()
+
+        plots_dir = sweep_dir / "plots"
+        assert plots_dir.is_dir()
+        assert (plots_dir / "throughput_requests_vs_concurrency.png").exists()
+        assert (plots_dir / "throughput_tokens_vs_concurrency.png").exists()
+        assert (plots_dir / "latency_vs_concurrency.png").exists()
+
+        # Check summary file contents
+        with open(sweep_dir / "sweep_summary.json", "r", encoding="utf-8") as f:
+            summary = json.load(f)
+            assert summary["experiment_id"] == "E002_TEST"
+            assert summary["status"] == "SUCCESS"
+            assert summary["sweep_param"] == "concurrency"
+            assert summary["sweep_values"] == [1, 2]
+            assert len(summary["points"]) == 2
+            assert summary["points"][0]["param_value"] == 1
+            assert summary["points"][1]["param_value"] == 2
+
+    asyncio.run(_run())

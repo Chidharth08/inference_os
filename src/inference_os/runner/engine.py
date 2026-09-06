@@ -1,7 +1,7 @@
 """High-level orchestration engine for end-to-end benchmark execution."""
 
 from pathlib import Path
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Callable, Optional
 
 import httpx
 
@@ -10,7 +10,7 @@ from inference_os.config import BenchmarkConfig
 from inference_os.results.persistence import save_benchmark_run
 from inference_os.runner.benchmark import (
     BenchmarkResult,
-    run_sequential_benchmark,
+    run_benchmark,
 )
 from inference_os.telemetry.environment import capture_environment
 from inference_os.telemetry.gpu import GPUTelemetrySampler, GPUTelemetrySummary
@@ -30,7 +30,7 @@ async def execute_benchmark(
     1. Load tokenizer (or use provided instance).
     2. Generate synthetic prompt of exact token length `config.prompt_tokens`.
     3. Start background GPU telemetry sampling.
-    4. Execute sequential benchmark (W warmup + N measured requests).
+    4. Execute benchmark with closed-loop concurrency (W warmup + N measured requests).
     5. Aggregate GPU telemetry and request measurements.
     6. Capture hardware and software environment metadata.
     7. Persist run directory (`config.json`, `environment.json`, `summary.json`,
@@ -61,15 +61,27 @@ async def execute_benchmark(
         request_id: str,
         index: int,
         is_warmup: bool,
-    ) -> tuple[AsyncGenerator[str, None], int, Optional[int]]:
-        stream = vllm_stream_completion(
-            model=config.model,
-            prompt=prompt,
-            max_tokens=config.max_output_tokens,
-            base_url=config.base_url,
-            client=client,
-        )
-        return stream, actual_input_tokens, None
+    ) -> tuple[AsyncGenerator[str, None], int, Optional[int | Callable[[], int]]]:
+        collected_chunks: list[str] = []
+
+        async def stream_wrapper() -> AsyncGenerator[str, None]:
+            async for chunk in vllm_stream_completion(
+                model=config.model,
+                prompt=prompt,
+                max_tokens=config.max_output_tokens,
+                base_url=config.base_url,
+                client=client,
+            ):
+                collected_chunks.append(chunk)
+                yield chunk
+
+        def get_actual_output_tokens() -> int:
+            if not collected_chunks:
+                return 0
+            full_text = "".join(collected_chunks)
+            return tokenizer.count_tokens(full_text)
+
+        return stream_wrapper(), actual_input_tokens, get_actual_output_tokens
 
     # 4. Execute benchmark with background GPU telemetry
     sampler = GPUTelemetrySampler(
@@ -78,9 +90,10 @@ async def execute_benchmark(
     )
 
     async with sampler:
-        result = await run_sequential_benchmark(
+        result = await run_benchmark(
             request_factory=request_factory,
             num_requests=config.num_requests,
+            concurrency=config.concurrency,
             warmup_requests=config.warmup_requests,
         )
 
