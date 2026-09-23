@@ -72,6 +72,7 @@ def _validate_controlled_fields(configs: list[BenchmarkConfig]) -> None:
         "warmup_requests",
         "seed",
         "temperature",
+        "request_timeout_seconds",
         "concurrency",
         "telemetry_interval_seconds",
         "device_index",
@@ -121,7 +122,10 @@ async def execute_e003(
         profile_results.append(
             {
                 "profile_name": profile_name,
-                "success": result.summary.successful_requests > 0,
+                "success": (
+                    result.summary.total_requests == profile_config.num_requests
+                    and result.summary.failed_requests == 0
+                ),
                 "run_dir": str(run_dir),
                 "benchmark": asdict(result.summary),
                 "gpu": asdict(gpu_summary) if gpu_summary is not None else None,

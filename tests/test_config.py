@@ -15,6 +15,7 @@ def test_benchmark_config_defaults() -> None:
     assert cfg.num_requests == 10
     assert cfg.warmup_requests == 2
     assert cfg.temperature == 0.0
+    assert cfg.request_timeout_seconds == 300.0
     assert cfg.telemetry_interval_seconds == 0.1
     assert cfg.seed == 42
 
@@ -44,6 +45,9 @@ def test_benchmark_config_validation_errors() -> None:
 
     with pytest.raises(ValueError, match="temperature cannot be negative"):
         BenchmarkConfig(model="test", temperature=-0.5)
+
+    with pytest.raises(ValueError, match="request_timeout_seconds must be positive"):
+        BenchmarkConfig(model="test", request_timeout_seconds=0.0)
 
 
 def test_benchmark_config_yaml_roundtrip(tmp_path) -> None:
@@ -191,3 +195,4 @@ def test_load_e003_profile_configs(config_path: str) -> None:
     assert loaded.experiment_id == "E003"
     assert loaded.workload is not None
     assert loaded.workload.prompt_reuse.mode == "none"
+    assert loaded.request_timeout_seconds == 300.0

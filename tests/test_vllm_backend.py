@@ -35,6 +35,7 @@ def test_vllm_stream_completion_success() -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             assert request.url.path == "/v1/completions"
             assert request.method == "POST"
+            assert request.extensions["timeout"]["read"] == 123.0
             payload = json.loads(request.content)
             assert payload["temperature"] == 0.25
             return httpx.Response(
@@ -51,6 +52,7 @@ def test_vllm_stream_completion_success() -> None:
                 prompt="Say hello",
                 max_tokens=10,
                 temperature=0.25,
+                request_timeout_seconds=123.0,
                 base_url="http://mockserver:8000",
                 client=client,
             ):

@@ -7,6 +7,7 @@ warmup_requests: 5
 concurrency: 4
 seed: 42
 temperature: 0.0
+request_timeout_seconds: 300.0
 enable_prefix_caching: false
 enable_chunked_prefill: false
 telemetry_interval_seconds: 0.1

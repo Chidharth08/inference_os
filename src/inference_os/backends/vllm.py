@@ -13,6 +13,7 @@ async def vllm_stream_completion(
     base_url: str = "http://localhost:8000",
     client: Optional[httpx.AsyncClient] = None,
     temperature: float = 0.0,
+    request_timeout_seconds: float = 300.0,
 ) -> AsyncGenerator[str, None]:
     """Stream text completions from a vLLM OpenAI-compatible server.
 
@@ -23,6 +24,9 @@ async def vllm_stream_completion(
         base_url: Base URL of the vLLM OpenAI-compatible server.
         client: Optional httpx.AsyncClient instance for testing or connection reuse.
         temperature: Sampling temperature sent to the backend.
+        request_timeout_seconds: Maximum seconds to wait for network activity. This
+            is deliberately longer than httpx's default for queued requests and
+            long prompt prefills.
 
     Yields:
         Non-empty generated text chunks as SSE data events arrive.
@@ -42,7 +46,12 @@ async def vllm_stream_completion(
         close_client = True
 
     try:
-        async with client.stream("POST", url, json=payload) as response:
+        async with client.stream(
+            "POST",
+            url,
+            json=payload,
+            timeout=request_timeout_seconds,
+        ) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():
                 line = line.strip()

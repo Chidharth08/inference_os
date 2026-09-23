@@ -108,6 +108,7 @@ async def execute_benchmark(
                 prompt=prompt,
                 max_tokens=spec.max_output_tokens,
                 temperature=config.temperature,
+                request_timeout_seconds=config.request_timeout_seconds,
                 base_url=config.base_url,
                 client=client,
             ):

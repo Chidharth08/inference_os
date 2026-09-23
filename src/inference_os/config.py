@@ -24,6 +24,7 @@ class BenchmarkConfig:
     warmup_requests: int = 2
     seed: int = 42
     temperature: float = 0.0
+    request_timeout_seconds: float = 300.0
     telemetry_interval_seconds: float = 0.1
     device_index: int = 0
     experiment_id: str = "E000"
@@ -61,6 +62,11 @@ class BenchmarkConfig:
             )
         if self.temperature < 0.0:
             raise ValueError(f"temperature cannot be negative, got {self.temperature}")
+        if self.request_timeout_seconds <= 0:
+            raise ValueError(
+                "request_timeout_seconds must be positive, got "
+                f"{self.request_timeout_seconds}"
+            )
         if self.chunked_prefill is not None and self.chunked_prefill <= 0:
             raise ValueError(
                 f"chunked_prefill must be positive if set, got {self.chunked_prefill}"
@@ -90,6 +96,7 @@ class BenchmarkConfig:
             "warmup_requests",
             "seed",
             "temperature",
+            "request_timeout_seconds",
             "telemetry_interval_seconds",
             "device_index",
             "experiment_id",
