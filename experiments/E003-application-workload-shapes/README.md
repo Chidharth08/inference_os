@@ -36,7 +36,7 @@ specific production traffic trace.
 - Precision: BF16
 - Backend: vLLM OpenAI-compatible endpoint
 - Closed-loop concurrency: 4
-- Measured requests: 100 per profile
+- Measured requests: 50 per profile
 - Warm-up requests: 5 per profile
 - Temperature: 0.0
 - Prefix caching: disabled

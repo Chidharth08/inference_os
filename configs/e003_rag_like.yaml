@@ -2,7 +2,7 @@
 experiment_id: E003
 model: Qwen/Qwen2.5-7B-Instruct
 base_url: http://localhost:18000
-num_requests: 100
+num_requests: 50
 warmup_requests: 5
 concurrency: 4
 seed: 42
