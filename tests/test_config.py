@@ -146,3 +146,48 @@ def test_load_e001a_actual_config_file() -> None:
     assert cfg.base_config.base_url == "http://localhost:18000"
     assert cfg.base_config.enable_prefix_caching is False
     assert cfg.base_config.enable_chunked_prefill is False
+
+
+def test_benchmark_config_loads_nested_workload_distribution() -> None:
+    """Verify workload profiles parse and round-trip through safe YAML."""
+    yaml_content = """
+model: Qwen/Qwen2.5-7B-Instruct
+num_requests: 500
+seed: 42
+concurrency: 4
+workload:
+  name: rag_like
+  input_tokens:
+    values: [2048, 4096, 8192]
+    weights: [0.20, 0.55, 0.25]
+  max_output_tokens:
+    values: [128, 256, 512]
+    weights: [0.45, 0.40, 0.15]
+  prompt_reuse:
+    mode: none
+"""
+    cfg = BenchmarkConfig.from_yaml(yaml_content)
+
+    assert cfg.workload is not None
+    assert cfg.workload.name == "rag_like"
+    assert cfg.workload.input_tokens.values == (2048, 4096, 8192)
+    assert cfg.workload.max_output_tokens.weights == (0.45, 0.40, 0.15)
+    assert BenchmarkConfig.from_yaml(cfg.to_yaml()) == cfg
+
+
+@pytest.mark.parametrize(
+    "config_path",
+    [
+        "configs/e003_chat_like.yaml",
+        "configs/e003_rag_like.yaml",
+        "configs/e003_summarization_like.yaml",
+    ],
+)
+def test_load_e003_profile_configs(config_path: str) -> None:
+    from inference_os.config import load_config
+
+    loaded = load_config(config_path)
+    assert isinstance(loaded, BenchmarkConfig)
+    assert loaded.experiment_id == "E003"
+    assert loaded.workload is not None
+    assert loaded.workload.prompt_reuse.mode == "none"

@@ -12,6 +12,7 @@ async def vllm_stream_completion(
     max_tokens: int,
     base_url: str = "http://localhost:8000",
     client: Optional[httpx.AsyncClient] = None,
+    temperature: float = 0.0,
 ) -> AsyncGenerator[str, None]:
     """Stream text completions from a vLLM OpenAI-compatible server.
 
@@ -21,6 +22,7 @@ async def vllm_stream_completion(
         max_tokens: Maximum tokens to generate.
         base_url: Base URL of the vLLM OpenAI-compatible server.
         client: Optional httpx.AsyncClient instance for testing or connection reuse.
+        temperature: Sampling temperature sent to the backend.
 
     Yields:
         Non-empty generated text chunks as SSE data events arrive.
@@ -31,7 +33,7 @@ async def vllm_stream_completion(
         "prompt": prompt,
         "max_tokens": max_tokens,
         "stream": True,
-        "temperature": 0.0,
+        "temperature": temperature,
     }
 
     close_client = False

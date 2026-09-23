@@ -1,0 +1,24 @@
+# Synthetic token-shape profile; no documents or summarization pipeline are used.
+experiment_id: E003
+model: Qwen/Qwen2.5-7B-Instruct
+base_url: http://localhost:18000
+num_requests: 100
+warmup_requests: 5
+concurrency: 4
+seed: 42
+temperature: 0.0
+enable_prefix_caching: false
+enable_chunked_prefill: false
+telemetry_interval_seconds: 0.1
+device_index: 0
+output_dir: runs
+workload:
+  name: summarization_like
+  input_tokens:
+    values: [2048, 4096, 8192]
+    weights: [0.20, 0.50, 0.30]
+  max_output_tokens:
+    values: [256, 512, 1024]
+    weights: [0.25, 0.55, 0.20]
+  prompt_reuse:
+    mode: none

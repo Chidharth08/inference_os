@@ -9,6 +9,8 @@ from typing import Any, Optional, Sequence
 
 import yaml
 
+from inference_os.workloads.spec import WorkloadConfig
+
 
 @dataclass(frozen=True, slots=True)
 class BenchmarkConfig:
@@ -30,6 +32,7 @@ class BenchmarkConfig:
     chunked_prefill: Optional[int] = None
     enable_chunked_prefill: bool = False
     concurrency: int = 1
+    workload: Optional[WorkloadConfig] = None
 
     def __post_init__(self) -> None:
         """Validate configuration invariants."""
@@ -73,7 +76,7 @@ class BenchmarkConfig:
 
     def to_yaml(self) -> str:
         """Serialize configuration to a YAML string."""
-        return yaml.dump(self.to_dict(), sort_keys=False)
+        return yaml.safe_dump(self.to_dict(), sort_keys=False)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> BenchmarkConfig:
@@ -95,8 +98,16 @@ class BenchmarkConfig:
             "chunked_prefill",
             "enable_chunked_prefill",
             "concurrency",
+            "workload",
         }
         filtered_data = {k: v for k, v in data.items() if k in known_keys}
+        workload_data = filtered_data.get("workload")
+        if isinstance(workload_data, dict):
+            filtered_data["workload"] = WorkloadConfig.from_dict(workload_data)
+        elif workload_data is not None and not isinstance(
+            workload_data, WorkloadConfig
+        ):
+            raise ValueError("workload must be a mapping")
         return cls(**filtered_data)
 
     @classmethod
@@ -166,7 +177,7 @@ class SweepConfig:
 
     def to_yaml(self) -> str:
         """Serialize to YAML string."""
-        return yaml.dump(self.to_dict(), sort_keys=False)
+        return yaml.safe_dump(self.to_dict(), sort_keys=False)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> SweepConfig:

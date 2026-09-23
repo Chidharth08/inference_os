@@ -1,6 +1,7 @@
 """Unit and integration tests for vLLM HTTP backend adapter."""
 
 import asyncio
+import json
 from typing import Callable, List
 
 import httpx
@@ -34,6 +35,8 @@ def test_vllm_stream_completion_success() -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             assert request.url.path == "/v1/completions"
             assert request.method == "POST"
+            payload = json.loads(request.content)
+            assert payload["temperature"] == 0.25
             return httpx.Response(
                 200,
                 content=sse_body,
@@ -47,6 +50,7 @@ def test_vllm_stream_completion_success() -> None:
                 model="Qwen/Qwen2.5-7B-Instruct",
                 prompt="Say hello",
                 max_tokens=10,
+                temperature=0.25,
                 base_url="http://mockserver:8000",
                 client=client,
             ):

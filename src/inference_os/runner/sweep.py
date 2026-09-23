@@ -19,7 +19,6 @@ from inference_os.reports.plots import (
 )
 from inference_os.runner.engine import execute_benchmark
 from inference_os.workloads.base import Tokenizer
-from inference_os.workloads.hf_tokenizer import HFTokenizer
 
 
 async def execute_sweep(
@@ -63,6 +62,8 @@ async def execute_sweep(
 
     # 3. Initialize tokenizer once
     if tokenizer is None:
+        from inference_os.workloads.hf_tokenizer import HFTokenizer
+
         tokenizer = HFTokenizer.from_pretrained(sweep_config.base_config.model)
 
     point_results: list[dict[str, Any]] = []

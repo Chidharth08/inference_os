@@ -6,6 +6,7 @@ from inference_os.reports.plots import (
     generate_e001a_plots,
     generate_e001b_plots,
     generate_e002_plots,
+    generate_e003_plots,
 )
 
 
@@ -241,3 +242,52 @@ def test_generate_e002_plots(tmp_path: Path) -> None:
     for plot_path in generated:
         assert plot_path.is_file()
         assert plot_path.stat().st_size > 1000
+
+
+def test_generate_e003_plots(tmp_path: Path) -> None:
+    """Verify profile comparison plots use benchmark and realized-plan summaries."""
+    profile_results = []
+    for index, name in enumerate(("chat_like", "rag_like", "summarization_like")):
+        scale = index + 1
+        profile_results.append(
+            {
+                "profile_name": name,
+                "benchmark": {
+                    "successful_requests": 10,
+                    "request_throughput": 4.0 / scale,
+                    "input_token_throughput": 1000.0 * scale,
+                    "output_token_throughput": 300.0 / scale,
+                    "total_token_throughput": 1000.0 * scale + 300.0 / scale,
+                    "ttft_stats": {"p50": 0.1 * scale, "p95": 0.2 * scale},
+                    "tpot_stats": {"p50": 0.02, "p95": 0.03},
+                    "e2e_latency_stats": {
+                        "p50": 1.5 * scale,
+                        "p95": 2.0 * scale,
+                    },
+                },
+                "workload": {
+                    "target_input_tokens": {
+                        "mean": 256.0 * scale,
+                        "p95": 512.0 * scale,
+                    },
+                    "max_output_tokens": {
+                        "mean": 64.0 * scale,
+                        "p95": 128.0 * scale,
+                    },
+                },
+                "gpu": {
+                    "avg_utilization_gpu_pct": 80.0 + index,
+                    "peak_memory_used_mb": 18000.0 + index * 500,
+                },
+            }
+        )
+
+    generated = generate_e003_plots(profile_results, tmp_path / "plots")
+
+    assert {path.name for path in generated} == {
+        "latency_by_profile.png",
+        "throughput_by_profile.png",
+        "workload_shape_by_profile.png",
+        "gpu_by_profile.png",
+    }
+    assert all(path.stat().st_size > 1000 for path in generated)

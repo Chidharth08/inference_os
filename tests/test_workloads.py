@@ -6,7 +6,10 @@ import pytest
 
 from inference_os.workloads import (
     HFTokenizer,
+    RequestSpec,
     Tokenizer,
+    TokenLengthDistribution,
+    generate_request_specs,
     generate_synthetic_prompt,
 )
 
@@ -94,3 +97,65 @@ def test_hf_tokenizer_wrapper() -> None:
 
     count = wrapper.count_tokens("hello world")
     assert count == 3
+
+
+def test_request_spec_generation_is_deterministic() -> None:
+    """The same distributions and seed must realize the identical request plan."""
+    input_dist = TokenLengthDistribution(
+        values=(128, 512, 2048), weights=(0.2, 0.5, 0.3)
+    )
+    output_dist = TokenLengthDistribution(
+        values=(64, 128, 256), weights=(0.5, 0.3, 0.2)
+    )
+
+    first = generate_request_specs(
+        num_requests=100,
+        seed=42,
+        input_tokens=input_dist,
+        max_output_tokens=output_dist,
+    )
+    second = generate_request_specs(
+        num_requests=100,
+        seed=42,
+        input_tokens=input_dist,
+        max_output_tokens=output_dist,
+    )
+    different_seed = generate_request_specs(
+        num_requests=100,
+        seed=43,
+        input_tokens=input_dist,
+        max_output_tokens=output_dist,
+    )
+
+    assert first == second
+    assert first != different_seed
+    assert all(isinstance(spec, RequestSpec) for spec in first)
+    assert {spec.target_input_tokens for spec in first} <= {128, 512, 2048}
+    assert {spec.max_output_tokens for spec in first} <= {64, 128, 256}
+
+
+def test_fixed_distribution_preserves_v1_request_shape() -> None:
+    specs = generate_request_specs(
+        num_requests=5,
+        seed=42,
+        input_tokens=TokenLengthDistribution.fixed(512),
+        max_output_tokens=TokenLengthDistribution.fixed(128),
+    )
+    assert specs == [RequestSpec(512, 128)] * 5
+
+
+@pytest.mark.parametrize(
+    ("values", "weights", "message"),
+    [
+        ((), (), "values cannot be empty"),
+        ((128, 256), (1.0,), "equal lengths"),
+        ((0,), (1.0,), "values must be positive"),
+        ((128,), (-1.0,), "finite and non-negative"),
+        ((128,), (0.0,), "positive sum"),
+    ],
+)
+def test_token_distribution_validation(
+    values: tuple[int, ...], weights: tuple[float, ...], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        TokenLengthDistribution(values=values, weights=weights)

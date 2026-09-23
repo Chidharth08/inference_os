@@ -15,7 +15,10 @@ from inference_os.runner.benchmark import (
 from inference_os.telemetry.environment import capture_environment
 from inference_os.telemetry.gpu import GPUTelemetrySampler, GPUTelemetrySummary
 from inference_os.workloads.base import Tokenizer
-from inference_os.workloads.hf_tokenizer import HFTokenizer
+from inference_os.workloads.spec import (
+    TokenLengthDistribution,
+    generate_request_specs,
+)
 from inference_os.workloads.synthetic import generate_synthetic_prompt
 
 
@@ -46,15 +49,46 @@ async def execute_benchmark(
     """
     # 1. Initialize tokenizer
     if tokenizer is None:
+        from inference_os.workloads.hf_tokenizer import HFTokenizer
+
         tokenizer = HFTokenizer.from_pretrained(config.model)
 
-    # 2. Generate synthetic prompt
-    prompt = generate_synthetic_prompt(
-        tokenizer=tokenizer,
-        num_tokens=config.prompt_tokens,
+    # 2. Realize the complete request plan before measurement begins.
+    if config.workload is None:
+        input_distribution = TokenLengthDistribution.fixed(config.prompt_tokens)
+        output_distribution = TokenLengthDistribution.fixed(config.max_output_tokens)
+    else:
+        input_distribution = config.workload.input_tokens
+        output_distribution = config.workload.max_output_tokens
+
+    all_specs = generate_request_specs(
+        num_requests=config.warmup_requests + config.num_requests,
         seed=config.seed,
+        input_tokens=input_distribution,
+        max_output_tokens=output_distribution,
     )
-    actual_input_tokens = tokenizer.count_tokens(prompt)
+    warmup_specs = all_specs[: config.warmup_requests]
+    measured_specs = all_specs[config.warmup_requests :]
+
+    # Keep legacy fixed-size runs behaviorally identical: V1 reuses one prompt.
+    # Named V2 profiles use distinct, deterministic content for every request.
+    if config.workload is None:
+        fixed_prompt = generate_synthetic_prompt(
+            tokenizer=tokenizer,
+            num_tokens=config.prompt_tokens,
+            seed=config.seed,
+        )
+        prompts = [fixed_prompt] * len(all_specs)
+    else:
+        prompts = [
+            generate_synthetic_prompt(
+                tokenizer=tokenizer,
+                num_tokens=spec.target_input_tokens,
+                seed=config.seed + index,
+            )
+            for index, spec in enumerate(all_specs)
+        ]
+    actual_input_counts = [tokenizer.count_tokens(prompt) for prompt in prompts]
 
     # 3. Define request factory
     async def request_factory(
@@ -62,13 +96,18 @@ async def execute_benchmark(
         index: int,
         is_warmup: bool,
     ) -> tuple[AsyncGenerator[str, None], int, Optional[int | Callable[[], int]]]:
+        plan_index = index if is_warmup else config.warmup_requests + index
+        spec = all_specs[plan_index]
+        prompt = prompts[plan_index]
+        actual_input_tokens = actual_input_counts[plan_index]
         collected_chunks: list[str] = []
 
         async def stream_wrapper() -> AsyncGenerator[str, None]:
             async for chunk in vllm_stream_completion(
                 model=config.model,
                 prompt=prompt,
-                max_tokens=config.max_output_tokens,
+                max_tokens=spec.max_output_tokens,
+                temperature=config.temperature,
                 base_url=config.base_url,
                 client=client,
             ):
@@ -110,6 +149,8 @@ async def execute_benchmark(
         result=result,
         gpu_summary=gpu_summary,
         gpu_samples=gpu_samples,
+        warmup_workload_specs=warmup_specs,
+        workload_specs=measured_specs,
     )
 
     return run_dir, result, gpu_summary

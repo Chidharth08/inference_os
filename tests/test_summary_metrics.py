@@ -101,6 +101,8 @@ def test_compute_benchmark_summary_success_and_throughput() -> None:
     # Throughputs
     assert summary.request_throughput == pytest.approx(3 / 5.0)  # 0.6 req/s
     assert summary.output_token_throughput == pytest.approx(100 / 5.0)  # 20.0 tok/s
+    assert summary.input_token_throughput == pytest.approx(300 / 5.0)
+    assert summary.total_token_throughput == pytest.approx(400 / 5.0)
 
     # TTFT stats (0.2, 0.3, 0.4)
     assert summary.ttft_stats is not None

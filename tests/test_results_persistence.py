@@ -145,6 +145,7 @@ def test_save_and_load_benchmark_run(tmp_path: Path) -> None:
     assert (run_dir / "environment.json").exists()
     assert (run_dir / "summary.json").exists()
     assert (run_dir / "requests.jsonl").exists()
+    assert (run_dir / "workload.jsonl").exists()
     assert (run_dir / "telemetry.jsonl").exists()
 
     # Load back
@@ -161,6 +162,17 @@ def test_save_and_load_benchmark_run(tmp_path: Path) -> None:
     assert loaded["requests"][0]["request_id"] == "warmup-1"
     assert loaded["requests"][1]["is_warmup"] is False
     assert loaded["requests"][1]["request_id"] == "req-1"
+
+    # Requested workload targets remain separate from actual measurements.
+    assert len(loaded["workload"]) == 3
+    assert loaded["workload"][0] == {
+        "request_id": "warmup-1",
+        "is_warmup": True,
+        "target_input_tokens": 128,
+        "max_output_tokens": 64,
+    }
+    assert loaded["summary"]["workload"]["request_count"] == 2
+    assert loaded["summary"]["workload"]["profile_name"] is None
 
     # Verify telemetry lines
     assert len(loaded["telemetry"]) == 1

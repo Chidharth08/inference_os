@@ -662,3 +662,144 @@ def generate_e002_plots(
         generated_plots.append(p4)
 
     return generated_plots
+
+
+def generate_e003_plots(
+    profile_results: Sequence[dict[str, Any]],
+    output_dir: Path | str,
+) -> list[Path]:
+    """Generate comparison plots for E003 application-shaped profiles."""
+    out_path = Path(output_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+
+    successful = [
+        item
+        for item in profile_results
+        if item.get("benchmark", {}).get("successful_requests", 0) > 0
+    ]
+    if not successful:
+        return []
+
+    names = [str(item["profile_name"]) for item in successful]
+
+    def benchmark_value(item: dict[str, Any], key: str) -> float:
+        return float(item.get("benchmark", {}).get(key, 0.0))
+
+    def percentile(item: dict[str, Any], metric: str, key: str) -> float:
+        stats = item.get("benchmark", {}).get(metric)
+        return float(stats.get(key, 0.0)) * 1000.0 if stats else 0.0
+
+    generated: list[Path] = []
+
+    # Latency profiles use separate panels because TTFT and E2E have different scales.
+    latency_path = out_path / "latency_by_profile.png"
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+    latency_metrics = (
+        ("ttft_stats", "TTFT", "ms"),
+        ("tpot_stats", "TPOT", "ms/token"),
+        ("e2e_latency_stats", "E2E Latency", "ms"),
+    )
+    positions = list(range(len(names)))
+    width = 0.36
+    for ax, (metric, title, unit) in zip(axes, latency_metrics):
+        p50 = [percentile(item, metric, "p50") for item in successful]
+        p95 = [percentile(item, metric, "p95") for item in successful]
+        ax.bar([p - width / 2 for p in positions], p50, width, label="P50")
+        ax.bar([p + width / 2 for p in positions], p95, width, label="P95")
+        ax.set_title(title, fontweight="bold")
+        ax.set_ylabel(unit)
+        ax.set_xticks(positions, names, rotation=15)
+        ax.grid(axis="y", linestyle="--", alpha=0.5)
+        ax.legend()
+    fig.suptitle("E003: Latency by Synthetic Workload Profile", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(latency_path, dpi=200)
+    plt.close(fig)
+    generated.append(latency_path)
+
+    throughput_path = out_path / "throughput_by_profile.png"
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    axes[0].bar(
+        names, [benchmark_value(item, "request_throughput") for item in successful]
+    )
+    axes[0].set_title("Request Throughput", fontweight="bold")
+    axes[0].set_ylabel("requests/s")
+    axes[0].tick_params(axis="x", rotation=15)
+    axes[0].grid(axis="y", linestyle="--", alpha=0.5)
+
+    token_metrics = (
+        ("input_token_throughput", "Input"),
+        ("output_token_throughput", "Output"),
+        ("total_token_throughput", "Total"),
+    )
+    token_width = 0.24
+    for offset, (key, label) in zip((-1, 0, 1), token_metrics):
+        axes[1].bar(
+            [p + offset * token_width for p in positions],
+            [benchmark_value(item, key) for item in successful],
+            token_width,
+            label=label,
+        )
+    axes[1].set_title("Token Throughput", fontweight="bold")
+    axes[1].set_ylabel("tokens/s")
+    axes[1].set_xticks(positions, names, rotation=15)
+    axes[1].grid(axis="y", linestyle="--", alpha=0.5)
+    axes[1].legend()
+    fig.suptitle("E003: Throughput by Synthetic Workload Profile", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(throughput_path, dpi=200)
+    plt.close(fig)
+    generated.append(throughput_path)
+
+    shape_path = out_path / "workload_shape_by_profile.png"
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    for ax, key, title in (
+        (axes[0], "target_input_tokens", "Target Input Length"),
+        (axes[1], "max_output_tokens", "Maximum Output Length"),
+    ):
+        means = [float(item["workload"][key]["mean"]) for item in successful]
+        p95s = [float(item["workload"][key]["p95"]) for item in successful]
+        ax.bar([p - width / 2 for p in positions], means, width, label="Mean")
+        ax.bar([p + width / 2 for p in positions], p95s, width, label="P95")
+        ax.set_title(title, fontweight="bold")
+        ax.set_ylabel("tokens")
+        ax.set_xticks(positions, names, rotation=15)
+        ax.grid(axis="y", linestyle="--", alpha=0.5)
+        ax.legend()
+    fig.suptitle("E003: Realized Workload Shapes", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(shape_path, dpi=200)
+    plt.close(fig)
+    generated.append(shape_path)
+
+    if any(item.get("gpu") for item in successful):
+        gpu_path = out_path / "gpu_by_profile.png"
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        gpu_util = [
+            float((item.get("gpu") or {}).get("avg_utilization_gpu_pct", 0.0))
+            for item in successful
+        ]
+        peak_memory = [
+            float((item.get("gpu") or {}).get("peak_memory_used_mb", 0.0))
+            for item in successful
+        ]
+        axes[0].bar(names, gpu_util)
+        axes[0].set_title("Average GPU Utilization", fontweight="bold")
+        axes[0].set_ylabel("utilization (%)")
+        axes[0].set_ylim(0, 105)
+        axes[0].tick_params(axis="x", rotation=15)
+        axes[0].grid(axis="y", linestyle="--", alpha=0.5)
+        axes[1].bar(names, peak_memory)
+        axes[1].set_title("Peak GPU Memory", fontweight="bold")
+        axes[1].set_ylabel("MiB")
+        axes[1].tick_params(axis="x", rotation=15)
+        axes[1].grid(axis="y", linestyle="--", alpha=0.5)
+        fig.suptitle(
+            "E003: GPU Metrics by Synthetic Workload Profile", fontweight="bold"
+        )
+        fig.tight_layout()
+        fig.savefig(gpu_path, dpi=200)
+        plt.close(fig)
+        generated.append(gpu_path)
+
+    return generated

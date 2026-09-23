@@ -34,6 +34,8 @@ class BenchmarkSummary:
     total_duration_seconds: float
     request_throughput: float
     output_token_throughput: float
+    input_token_throughput: float = 0.0
+    total_token_throughput: float = 0.0
     error_rate: float = 0.0
     ttft_stats: Optional[MetricStats] = None
     e2e_latency_stats: Optional[MetricStats] = None
@@ -112,6 +114,8 @@ def compute_benchmark_summary(
     safe_duration = max(total_duration_seconds, 1e-9)
     request_throughput = len(successful) / safe_duration
     output_token_throughput = total_output_tokens / safe_duration
+    input_token_throughput = total_input_tokens / safe_duration
+    total_token_throughput = (total_input_tokens + total_output_tokens) / safe_duration
 
     ttft_values = [m.ttft_seconds for m in successful if m.ttft_seconds is not None]
     e2e_values = [m.e2e_latency_seconds for m in successful]
@@ -138,6 +142,8 @@ def compute_benchmark_summary(
         total_duration_seconds=total_duration_seconds,
         request_throughput=request_throughput,
         output_token_throughput=output_token_throughput,
+        input_token_throughput=input_token_throughput,
+        total_token_throughput=total_token_throughput,
         error_rate=error_rate,
         ttft_stats=ttft_stats,
         e2e_latency_stats=e2e_stats,
