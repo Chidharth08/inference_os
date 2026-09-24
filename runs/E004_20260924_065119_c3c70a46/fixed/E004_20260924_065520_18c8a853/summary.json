@@ -1,0 +1,171 @@
+{
+  "run_id": "E004_20260924_065520_18c8a853",
+  "benchmark": {
+    "total_requests": 50,
+    "successful_requests": 50,
+    "failed_requests": 0,
+    "total_input_tokens": 204800,
+    "total_output_tokens": 25600,
+    "total_duration_seconds": 177.532804854,
+    "request_throughput": 0.2816380895976896,
+    "output_token_throughput": 144.19870187401708,
+    "input_token_throughput": 1153.5896149921366,
+    "total_token_throughput": 1297.7883168661538,
+    "error_rate": 0.0,
+    "ttft_stats": {
+      "count": 50,
+      "mean": 2.40934956792,
+      "std_dev": 0.9873190623437432,
+      "min": 0.863623819,
+      "max": 3.425075286,
+      "p50": 2.5820316720000003,
+      "p90": 3.3281913595,
+      "p95": 3.3684695284,
+      "p99": 3.4230558259699997
+    },
+    "e2e_latency_stats": {
+      "count": 50,
+      "mean": 13.7250118688,
+      "std_dev": 0.39991707162602513,
+      "min": 11.785101514,
+      "max": 13.91794695,
+      "p50": 13.7889419515,
+      "p90": 13.8790098352,
+      "p95": 13.89032587475,
+      "p99": 13.90992506641
+    },
+    "tpot_stats": {
+      "count": 50,
+      "mean": 0.02214415323068493,
+      "std_dev": 0.0019120305200509332,
+      "min": 0.019812717727984343,
+      "max": 0.02530523172994129,
+      "p50": 0.021686665701565556,
+      "p90": 0.02512750766203523,
+      "p95": 0.025216697535225048,
+      "p99": 0.025283330597886497
+    },
+    "errors": null
+  },
+  "warmup": {
+    "total_requests": 5,
+    "successful_requests": 5,
+    "failed_requests": 0,
+    "total_input_tokens": 20480,
+    "total_output_tokens": 2560,
+    "total_duration_seconds": 54.611546344,
+    "request_throughput": 0.09155573014733605,
+    "output_token_throughput": 46.87653383543606,
+    "input_token_throughput": 375.01227068348845,
+    "total_token_throughput": 421.8888045189245,
+    "error_rate": 0.0,
+    "ttft_stats": {
+      "count": 5,
+      "mean": 0.8955375914000001,
+      "std_dev": 0.07614261225810946,
+      "min": 0.852751796,
+      "max": 1.030134861,
+      "p50": 0.859567238,
+      "p90": 0.9707188550000001,
+      "p95": 1.000426858,
+      "p99": 1.0241932604000001
+    },
+    "e2e_latency_stats": {
+      "count": 5,
+      "mean": 10.9187877034,
+      "std_dev": 0.06513915188668855,
+      "min": 10.876347308,
+      "max": 11.030465006,
+      "p50": 10.883811965,
+      "p90": 10.987376130000001,
+      "p95": 11.008920567999999,
+      "p99": 11.0261561184
+    },
+    "tpot_stats": {
+      "count": 5,
+      "mean": 0.019614970864970646,
+      "std_dev": 2.8699892561194646e-05,
+      "min": 0.019570117700587083,
+      "max": 0.01964999602739726,
+      "p50": 0.019616917273972606,
+      "p90": 0.019638868227788653,
+      "p95": 0.019644432127592953,
+      "p99": 0.0196488832474364
+    },
+    "errors": null
+  },
+  "gpu": {
+    "sample_count": 1362,
+    "peak_memory_used_mb": 19858,
+    "avg_memory_used_mb": 19858.0,
+    "peak_utilization_gpu_pct": 100,
+    "avg_utilization_gpu_pct": 98.83333333333333,
+    "total_memory_mb": 24576
+  },
+  "workload": {
+    "profile_name": "fixed",
+    "seed": 42,
+    "sampling_mode": "stratified",
+    "request_count": 50,
+    "target_input_tokens": {
+      "count": 50,
+      "mean": 4096.0,
+      "std_dev": 0.0,
+      "min": 4096.0,
+      "max": 4096.0,
+      "p50": 4096.0,
+      "p90": 4096.0,
+      "p95": 4096.0,
+      "p99": 4096.0
+    },
+    "max_output_tokens": {
+      "count": 50,
+      "mean": 512.0,
+      "std_dev": 0.0,
+      "min": 512.0,
+      "max": 512.0,
+      "p50": 512.0,
+      "p90": 512.0,
+      "p95": 512.0,
+      "p99": 512.0
+    },
+    "configured_distributions": {
+      "target_input_tokens": {
+        "values": [
+          4096
+        ],
+        "weights": [
+          1.0
+        ],
+        "mean": 4096.0,
+        "std_dev": 0.0,
+        "coefficient_of_variation": 0.0
+      },
+      "max_output_tokens": {
+        "values": [
+          512
+        ],
+        "weights": [
+          1.0
+        ],
+        "mean": 512.0,
+        "std_dev": 0.0,
+        "coefficient_of_variation": 0.0
+      }
+    },
+    "sampling_error": {
+      "target_input_tokens": {
+        "configured_mean": 4096.0,
+        "realized_mean": 4096.0,
+        "mean_delta_tokens": 0.0,
+        "mean_delta_percent": 0.0
+      },
+      "max_output_tokens": {
+        "configured_mean": 512.0,
+        "realized_mean": 512.0,
+        "mean_delta_tokens": 0.0,
+        "mean_delta_percent": 0.0
+      }
+    }
+  }
+}

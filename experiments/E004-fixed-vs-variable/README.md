@@ -144,6 +144,36 @@ is reproducible without reverse-engineering the plots.
 - Bucket differences can reveal interference patterns, but this two-profile
   experiment cannot fully isolate every scheduler mechanism.
 
+## Empirical Results (1× NVIDIA GeForce RTX 3090)
+
+- Run ID: `E004_20260924_065119_c3c70a46`
+- Source commit: `204b3961380299aa88c7b6d8ecbd37e1fe73af57`
+- Backend: vLLM 0.30.0, BF16
+- Workload: 50 measured requests per profile, 100/100 successful
+- Realized means: exactly 4,096 input tokens and 512 output tokens per request
+
+| Profile | Req/s | TTFT P50 | TTFT P95 | TTFT P99 | E2E P50 | E2E P95 | E2E P99 | Errors |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Fixed | 0.2816 | 2,582.03 ms | 3,368.47 ms | 3,423.06 ms | 13.789 s | 13.890 s | 13.910 s | 0% |
+| Variable | 0.2823 | 1,640.65 ms | 3,848.66 ms | 3,979.81 ms | 13.436 s | 24.526 s | 25.543 s | 0% |
+
+Key findings:
+
+1. Variable E2E P95/P99 increased 76.6%/83.6% despite identical mean and total
+   token work.
+2. Variable median E2E remained close and median TTFT improved because 20% of
+   prompts were short; median-only reporting would therefore miss the tail cost.
+3. Throughput was effectively identical, rejecting the hypothesis that
+   heterogeneity must reduce throughput at concurrency 4.
+4. Median TTFT increased monotonically across 1,024/4,096/7,168-token input
+   buckets, while median E2E increased from 4.915 s to 24.459 s across
+   128/512/896-token output buckets.
+5. Fixed and variable peak VRAM were identical at 19,858 MiB.
+
+See the [complete validation report](../../outputs/e004_fixed_vs_variable_validation.md),
+[canonical raw run](../../runs/E004_20260924_065119_c3c70a46/), and
+[publication plots](../../outputs/plots/e004/).
+
 ## Limitations and What E004 Does Not Prove
 
 - Workloads are synthetic discrete distributions, not production traces.

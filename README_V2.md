@@ -570,7 +570,7 @@ Do not implement E003 reports until this foundation is clean and tested.
 - add input and total token throughput,
 - produce plots and the E003 report.
 
-## Milestone V2.2 — E004 Heterogeneity
+## Milestone V2.3 — E005 Sustainable Load
 
 - construct fixed and variable workloads with similar means,
 - add distribution and length-bucket summaries,
@@ -611,13 +611,16 @@ relative to chat, while the long-output summarization profile produced the
 highest E2E latency. It also demonstrated why input, output, and total-token
 throughput must be reported separately.
 
-The E004 implementation is now ready with mean-matched fixed and heterogeneous
-profiles, deterministic stratified sampling, configured-versus-realized
-distribution diagnostics, exact length-bucket summaries, P99 reporting, and
-comparison plots. The next operational step is to run its pilot and canonical
-GPU comparison, then preserve and analyze the resulting artifacts. Open-loop
-scheduling, SLO evaluation, and cost metrics remain deferred until their
-planned experiments.
+E004 is complete. Its mean-matched fixed and variable profiles processed exactly
+the same aggregate input and output tokens with nearly identical throughput,
+but the variable workload increased E2E P95 by 76.6% and P99 by 83.6%. The raw
+measurements, exact plans, bucket summaries, telemetry, plots, and validation
+report are preserved in the repository.
+
+The next engineering milestone is E005: constant-rate open-loop scheduling,
+duration-based execution, overload safeguards, explicit latency SLOs, goodput,
+and identification of the saturation knee. Cost metrics remain deferred until
+E006.
 
 ---
 

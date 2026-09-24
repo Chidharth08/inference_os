@@ -1,0 +1,42 @@
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "base_url": "http://localhost:18000",
+  "prompt_tokens": 128,
+  "max_output_tokens": 64,
+  "num_requests": 50,
+  "warmup_requests": 5,
+  "seed": 42,
+  "temperature": 0.0,
+  "request_timeout_seconds": 300.0,
+  "telemetry_interval_seconds": 0.1,
+  "device_index": 0,
+  "experiment_id": "E004",
+  "output_dir": "runs/E004_20260924_065119_c3c70a46/fixed",
+  "enable_prefix_caching": false,
+  "chunked_prefill": null,
+  "enable_chunked_prefill": false,
+  "concurrency": 4,
+  "workload": {
+    "name": "fixed",
+    "input_tokens": {
+      "values": [
+        4096
+      ],
+      "weights": [
+        1.0
+      ]
+    },
+    "max_output_tokens": {
+      "values": [
+        512
+      ],
+      "weights": [
+        1.0
+      ]
+    },
+    "prompt_reuse": {
+      "mode": "none"
+    },
+    "sampling_mode": "stratified"
+  }
+}

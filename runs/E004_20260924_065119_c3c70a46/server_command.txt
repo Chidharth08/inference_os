@@ -1,0 +1,7 @@
+vllm serve Qwen/Qwen2.5-7B-Instruct \
+  --dtype bfloat16 \
+  --max-num-seqs 64 \
+  --no-enable-prefix-caching \
+  --no-enable-chunked-prefill \
+  --gpu-memory-utilization 0.90 \
+  --port 18000
