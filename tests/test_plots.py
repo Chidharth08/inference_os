@@ -7,6 +7,7 @@ from inference_os.reports.plots import (
     generate_e001b_plots,
     generate_e002_plots,
     generate_e003_plots,
+    generate_e004_plots,
 )
 
 
@@ -288,6 +289,78 @@ def test_generate_e003_plots(tmp_path: Path) -> None:
         "latency_by_profile.png",
         "throughput_by_profile.png",
         "workload_shape_by_profile.png",
+        "gpu_by_profile.png",
+    }
+    assert all(path.stat().st_size > 1000 for path in generated)
+
+
+def test_generate_e004_plots(tmp_path: Path) -> None:
+    """Verify E004 aggregate, distribution, bucket, and GPU plots."""
+
+    def metric_stats(scale: float) -> dict[str, float]:
+        return {"p50": scale, "p95": scale * 1.8, "p99": scale * 2.2}
+
+    profile_results = []
+    for name, std_dev, lengths in (
+        ("fixed", 0.0, [4096]),
+        ("variable", 1943.0, [1024, 4096, 7168]),
+    ):
+        buckets = [
+            {
+                "token_length": length,
+                "ttft_stats": metric_stats(0.2 + index * 0.1),
+                "tpot_stats": metric_stats(0.02 + index * 0.005),
+                "e2e_latency_stats": metric_stats(4.0 + index),
+            }
+            for index, length in enumerate(lengths)
+        ]
+        output_buckets = [
+            {**bucket, "token_length": length}
+            for bucket, length in zip(
+                buckets, ([512] if name == "fixed" else [128, 512, 896])
+            )
+        ]
+        profile_results.append(
+            {
+                "profile_name": name,
+                "benchmark": {
+                    "successful_requests": 50,
+                    "request_throughput": 0.5,
+                    "input_token_throughput": 2000.0,
+                    "output_token_throughput": 200.0,
+                    "total_token_throughput": 2200.0,
+                    "ttft_stats": metric_stats(0.4),
+                    "tpot_stats": metric_stats(0.03),
+                    "e2e_latency_stats": metric_stats(8.0),
+                },
+                "workload": {
+                    "configured_distributions": {
+                        "target_input_tokens": {
+                            "mean": 4096.0,
+                            "std_dev": std_dev,
+                        },
+                        "max_output_tokens": {
+                            "mean": 512.0,
+                            "std_dev": 0.0 if name == "fixed" else 243.0,
+                        },
+                    }
+                },
+                "input_length_buckets": buckets,
+                "output_length_buckets": output_buckets,
+                "gpu": {
+                    "avg_utilization_gpu_pct": 98.0,
+                    "peak_memory_used_mb": 21000,
+                },
+            }
+        )
+
+    generated = generate_e004_plots(profile_results, tmp_path / "plots")
+
+    assert {path.name for path in generated} == {
+        "distribution_comparison.png",
+        "latency_percentiles_by_profile.png",
+        "throughput_by_profile.png",
+        "length_bucket_latency.png",
         "gpu_by_profile.png",
     }
     assert all(path.stat().st_size > 1000 for path in generated)

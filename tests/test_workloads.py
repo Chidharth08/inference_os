@@ -144,6 +144,52 @@ def test_fixed_distribution_preserves_v1_request_shape() -> None:
     assert specs == [RequestSpec(512, 128)] * 5
 
 
+def test_stratified_sampling_matches_weighted_means_and_is_deterministic() -> None:
+    input_dist = TokenLengthDistribution(
+        values=(1024, 4096, 7168), weights=(0.2, 0.6, 0.2)
+    )
+    output_dist = TokenLengthDistribution(
+        values=(128, 512, 896), weights=(0.2, 0.6, 0.2)
+    )
+
+    first = generate_request_specs(
+        num_requests=50,
+        seed=42,
+        input_tokens=input_dist,
+        max_output_tokens=output_dist,
+        sampling_mode="stratified",
+    )
+    second = generate_request_specs(
+        num_requests=50,
+        seed=42,
+        input_tokens=input_dist,
+        max_output_tokens=output_dist,
+        sampling_mode="stratified",
+    )
+
+    assert first == second
+    assert sum(spec.target_input_tokens for spec in first) / len(first) == 4096
+    assert sum(spec.max_output_tokens for spec in first) / len(first) == 512
+    assert [spec.target_input_tokens for spec in first].count(1024) == 10
+    assert [spec.target_input_tokens for spec in first].count(4096) == 30
+    assert [spec.target_input_tokens for spec in first].count(7168) == 10
+    assert input_dist.mean == 4096
+    assert output_dist.mean == 512
+    assert input_dist.std_dev > 0
+
+
+def test_invalid_sampling_mode_is_rejected() -> None:
+    distribution = TokenLengthDistribution.fixed(128)
+    with pytest.raises(ValueError, match="sampling mode"):
+        generate_request_specs(
+            num_requests=2,
+            seed=42,
+            input_tokens=distribution,
+            max_output_tokens=distribution,
+            sampling_mode="unknown",
+        )
+
+
 @pytest.mark.parametrize(
     ("values", "weights", "message"),
     [

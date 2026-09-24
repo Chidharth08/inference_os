@@ -803,3 +803,231 @@ def generate_e003_plots(
         generated.append(gpu_path)
 
     return generated
+
+
+def generate_e004_plots(
+    profile_results: Sequence[dict[str, Any]],
+    output_dir: Path | str,
+) -> list[Path]:
+    """Generate fixed-versus-variable workload comparison plots for E004."""
+    out_path = Path(output_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+
+    successful = [
+        item
+        for item in profile_results
+        if item.get("benchmark", {}).get("successful_requests", 0) > 0
+    ]
+    if not successful:
+        return []
+
+    names = [str(item["profile_name"]) for item in successful]
+    positions = list(range(len(names)))
+    generated: list[Path] = []
+
+    def benchmark_value(item: dict[str, Any], key: str) -> float:
+        return float(item.get("benchmark", {}).get(key, 0.0))
+
+    def percentile(item: dict[str, Any], metric: str, key: str) -> float:
+        stats = item.get("benchmark", {}).get(metric)
+        return float(stats.get(key, 0.0)) if stats else 0.0
+
+    # Configured means and standard deviations make the controlled mean and
+    # independent variance visible in one figure.
+    distribution_path = out_path / "distribution_comparison.png"
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    for ax, key, title in (
+        (axes[0], "target_input_tokens", "Input-Length Distribution"),
+        (axes[1], "max_output_tokens", "Output-Cap Distribution"),
+    ):
+        configured = [
+            item["workload"]["configured_distributions"][key] for item in successful
+        ]
+        means = [float(summary["mean"]) for summary in configured]
+        std_devs = [float(summary["std_dev"]) for summary in configured]
+        ax.bar(names, means, yerr=std_devs, capsize=6)
+        ax.set_title(title, fontweight="bold")
+        ax.set_ylabel("tokens (mean ± population σ)")
+        ax.grid(axis="y", linestyle="--", alpha=0.5)
+    fig.suptitle("E004: Matched Means, Different Variance", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(distribution_path, dpi=200)
+    plt.close(fig)
+    generated.append(distribution_path)
+
+    latency_path = out_path / "latency_percentiles_by_profile.png"
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    width = 0.24
+    for ax, metric, title, multiplier, unit in (
+        (axes[0], "ttft_stats", "Time to First Token", 1000.0, "ms"),
+        (axes[1], "e2e_latency_stats", "End-to-End Latency", 1.0, "seconds"),
+    ):
+        for offset, quantile in zip((-1, 0, 1), ("p50", "p95", "p99")):
+            ax.bar(
+                [position + offset * width for position in positions],
+                [
+                    percentile(item, metric, quantile) * multiplier
+                    for item in successful
+                ],
+                width,
+                label=quantile.upper(),
+            )
+        ax.set_title(title, fontweight="bold")
+        ax.set_ylabel(unit)
+        ax.set_xticks(positions, names)
+        ax.grid(axis="y", linestyle="--", alpha=0.5)
+        ax.legend()
+    fig.suptitle("E004: Aggregate Latency Tails", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(latency_path, dpi=200)
+    plt.close(fig)
+    generated.append(latency_path)
+
+    throughput_path = out_path / "throughput_by_profile.png"
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    axes[0].bar(
+        names, [benchmark_value(item, "request_throughput") for item in successful]
+    )
+    axes[0].set_title("Request Throughput", fontweight="bold")
+    axes[0].set_ylabel("requests/s")
+    axes[0].grid(axis="y", linestyle="--", alpha=0.5)
+
+    token_width = 0.24
+    for offset, (key, label) in zip(
+        (-1, 0, 1),
+        (
+            ("input_token_throughput", "Input"),
+            ("output_token_throughput", "Output"),
+            ("total_token_throughput", "Total"),
+        ),
+    ):
+        axes[1].bar(
+            [position + offset * token_width for position in positions],
+            [benchmark_value(item, key) for item in successful],
+            token_width,
+            label=label,
+        )
+    axes[1].set_title("Token Throughput", fontweight="bold")
+    axes[1].set_ylabel("tokens/s")
+    axes[1].set_xticks(positions, names)
+    axes[1].grid(axis="y", linestyle="--", alpha=0.5)
+    axes[1].legend()
+    fig.suptitle("E004: Throughput by Workload Variance", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(throughput_path, dpi=200)
+    plt.close(fig)
+    generated.append(throughput_path)
+
+    variable = max(
+        successful,
+        key=lambda item: float(
+            item["workload"]["configured_distributions"]["target_input_tokens"][
+                "std_dev"
+            ]
+        ),
+    )
+    fixed = min(
+        successful,
+        key=lambda item: float(
+            item["workload"]["configured_distributions"]["target_input_tokens"][
+                "std_dev"
+            ]
+        ),
+    )
+    bucket_path = out_path / "length_bucket_latency.png"
+    fig, axes = plt.subplots(2, 2, figsize=(13, 9))
+    bucket_panels = (
+        (
+            axes[0, 0],
+            "input_length_buckets",
+            "ttft_stats",
+            "TTFT by Target Input Length",
+            1000.0,
+            "ms",
+        ),
+        (
+            axes[0, 1],
+            "input_length_buckets",
+            "e2e_latency_stats",
+            "E2E by Target Input Length",
+            1.0,
+            "seconds",
+        ),
+        (
+            axes[1, 0],
+            "output_length_buckets",
+            "tpot_stats",
+            "TPOT by Maximum Output Length",
+            1000.0,
+            "ms/token",
+        ),
+        (
+            axes[1, 1],
+            "output_length_buckets",
+            "e2e_latency_stats",
+            "E2E by Maximum Output Length",
+            1.0,
+            "seconds",
+        ),
+    )
+    for ax, bucket_key, metric, title, multiplier, unit in bucket_panels:
+        buckets = variable.get(bucket_key, [])
+        lengths = [int(bucket["token_length"]) for bucket in buckets]
+        for quantile, style in (("p50", "o-"), ("p95", "s--"), ("p99", "^:")):
+            values = [
+                float((bucket.get(metric) or {}).get(quantile, 0.0)) * multiplier
+                for bucket in buckets
+            ]
+            ax.plot(lengths, values, style, label=f"Variable {quantile.upper()}")
+        fixed_value = percentile(fixed, metric, "p95") * multiplier
+        ax.axhline(
+            fixed_value,
+            color="#d62728",
+            linestyle="-.",
+            label="Fixed aggregate P95",
+        )
+        ax.set_title(title, fontweight="bold")
+        ax.set_xlabel("tokens")
+        ax.set_ylabel(unit)
+        ax.grid(True, linestyle="--", alpha=0.5)
+        ax.legend(fontsize=8)
+    fig.suptitle(
+        "E004: Variable-Workload Length Buckets and Fixed Baseline",
+        fontweight="bold",
+    )
+    fig.tight_layout()
+    fig.savefig(bucket_path, dpi=200)
+    plt.close(fig)
+    generated.append(bucket_path)
+
+    if any(item.get("gpu") for item in successful):
+        gpu_path = out_path / "gpu_by_profile.png"
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        axes[0].bar(
+            names,
+            [
+                float((item.get("gpu") or {}).get("avg_utilization_gpu_pct", 0.0))
+                for item in successful
+            ],
+        )
+        axes[0].set_title("Average GPU Utilization", fontweight="bold")
+        axes[0].set_ylabel("utilization (%)")
+        axes[0].set_ylim(0, 105)
+        axes[0].grid(axis="y", linestyle="--", alpha=0.5)
+        axes[1].bar(
+            names,
+            [
+                float((item.get("gpu") or {}).get("peak_memory_used_mb", 0.0))
+                for item in successful
+            ],
+        )
+        axes[1].set_title("Peak GPU Memory", fontweight="bold")
+        axes[1].set_ylabel("MiB")
+        axes[1].grid(axis="y", linestyle="--", alpha=0.5)
+        fig.suptitle("E004: GPU Metrics by Workload Variance", fontweight="bold")
+        fig.tight_layout()
+        fig.savefig(gpu_path, dpi=200)
+        plt.close(fig)
+        generated.append(gpu_path)
+
+    return generated

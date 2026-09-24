@@ -196,3 +196,19 @@ def test_load_e003_profile_configs(config_path: str) -> None:
     assert loaded.workload is not None
     assert loaded.workload.prompt_reuse.mode == "none"
     assert loaded.request_timeout_seconds == 300.0
+
+
+@pytest.mark.parametrize(
+    "config_path",
+    ["configs/e004_fixed.yaml", "configs/e004_variable.yaml"],
+)
+def test_load_e004_profile_configs(config_path: str) -> None:
+    from inference_os.config import load_config
+
+    loaded = load_config(config_path)
+    assert isinstance(loaded, BenchmarkConfig)
+    assert loaded.experiment_id == "E004"
+    assert loaded.workload is not None
+    assert loaded.workload.sampling_mode == "stratified"
+    assert loaded.workload.input_tokens.mean == 4096
+    assert loaded.workload.max_output_tokens.mean == 512
