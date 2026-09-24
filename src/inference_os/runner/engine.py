@@ -61,14 +61,37 @@ async def execute_benchmark(
         input_distribution = config.workload.input_tokens
         output_distribution = config.workload.max_output_tokens
 
-    all_specs = generate_request_specs(
-        num_requests=config.warmup_requests + config.num_requests,
-        seed=config.seed,
-        input_tokens=input_distribution,
-        max_output_tokens=output_distribution,
+    sampling_mode = (
+        config.workload.sampling_mode if config.workload is not None else "iid"
     )
-    warmup_specs = all_specs[: config.warmup_requests]
-    measured_specs = all_specs[config.warmup_requests :]
+    if sampling_mode == "stratified":
+        # Stratify each phase independently so the measured distribution is not
+        # distorted by removing the warm-up prefix from one combined plan.
+        warmup_specs = generate_request_specs(
+            num_requests=config.warmup_requests,
+            seed=config.seed + 1,
+            input_tokens=input_distribution,
+            max_output_tokens=output_distribution,
+            sampling_mode=sampling_mode,
+        )
+        measured_specs = generate_request_specs(
+            num_requests=config.num_requests,
+            seed=config.seed,
+            input_tokens=input_distribution,
+            max_output_tokens=output_distribution,
+            sampling_mode=sampling_mode,
+        )
+        all_specs = [*warmup_specs, *measured_specs]
+    else:
+        all_specs = generate_request_specs(
+            num_requests=config.warmup_requests + config.num_requests,
+            seed=config.seed,
+            input_tokens=input_distribution,
+            max_output_tokens=output_distribution,
+            sampling_mode=sampling_mode,
+        )
+        warmup_specs = all_specs[: config.warmup_requests]
+        measured_specs = all_specs[config.warmup_requests :]
 
     # Keep legacy fixed-size runs behaviorally identical: V1 reuses one prompt.
     # Named V2 profiles use distinct, deterministic content for every request.

@@ -1,0 +1,26 @@
+# Fixed baseline for E004; means match the heterogeneous profile exactly.
+experiment_id: E004
+model: Qwen/Qwen2.5-7B-Instruct
+base_url: http://localhost:18000
+num_requests: 50
+warmup_requests: 5
+concurrency: 4
+seed: 42
+temperature: 0.0
+request_timeout_seconds: 300.0
+enable_prefix_caching: false
+enable_chunked_prefill: false
+telemetry_interval_seconds: 0.1
+device_index: 0
+output_dir: runs
+workload:
+  name: fixed
+  sampling_mode: stratified
+  input_tokens:
+    values: [4096]
+    weights: [1.0]
+  max_output_tokens:
+    values: [512]
+    weights: [1.0]
+  prompt_reuse:
+    mode: none

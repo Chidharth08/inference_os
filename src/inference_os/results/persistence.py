@@ -13,7 +13,7 @@ from inference_os.config import BenchmarkConfig
 from inference_os.metrics.summary import calculate_metric_stats
 from inference_os.telemetry.environment import EnvironmentMetadata
 from inference_os.telemetry.gpu import GPUSample, GPUTelemetrySummary
-from inference_os.workloads.spec import RequestSpec
+from inference_os.workloads.spec import RequestSpec, TokenLengthDistribution
 
 if TYPE_CHECKING:
     from inference_os.runner.benchmark import BenchmarkResult
@@ -210,10 +210,61 @@ def _summarize_workload(
     output_stats = calculate_metric_stats(
         [float(spec.max_output_tokens) for spec in specs]
     )
-    return {
+    if config.workload is None:
+        input_distribution = None
+        output_distribution = None
+        sampling_mode = "fixed"
+    else:
+        input_distribution = config.workload.input_tokens
+        output_distribution = config.workload.max_output_tokens
+        sampling_mode = config.workload.sampling_mode
+
+    summary = {
         "profile_name": config.workload.name if config.workload is not None else None,
         "seed": config.seed,
+        "sampling_mode": sampling_mode,
         "request_count": len(specs),
         "target_input_tokens": asdict(input_stats) if input_stats else None,
         "max_output_tokens": asdict(output_stats) if output_stats else None,
+    }
+    if input_distribution is not None and output_distribution is not None:
+        summary["configured_distributions"] = {
+            "target_input_tokens": _distribution_summary(input_distribution),
+            "max_output_tokens": _distribution_summary(output_distribution),
+        }
+        summary["sampling_error"] = {
+            "target_input_tokens": _mean_sampling_error(
+                input_stats.mean if input_stats else 0.0,
+                input_distribution.mean,
+            ),
+            "max_output_tokens": _mean_sampling_error(
+                output_stats.mean if output_stats else 0.0,
+                output_distribution.mean,
+            ),
+        }
+    return summary
+
+
+def _distribution_summary(
+    distribution: TokenLengthDistribution,
+) -> dict[str, Any]:
+    mean = distribution.mean
+    return {
+        "values": list(distribution.values),
+        "weights": list(distribution.normalized_weights),
+        "mean": mean,
+        "std_dev": distribution.std_dev,
+        "coefficient_of_variation": distribution.std_dev / mean,
+    }
+
+
+def _mean_sampling_error(
+    realized_mean: float, configured_mean: float
+) -> dict[str, float]:
+    delta = realized_mean - configured_mean
+    return {
+        "configured_mean": configured_mean,
+        "realized_mean": realized_mean,
+        "mean_delta_tokens": delta,
+        "mean_delta_percent": (delta / configured_mean) * 100.0,
     }

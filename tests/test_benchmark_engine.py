@@ -155,3 +155,54 @@ def test_execute_benchmark_uses_realized_workload_specs(tmp_path: Path) -> None:
         assert loaded["summary"]["workload"]["profile_name"] == "test_profile"
 
     asyncio.run(_run())
+
+
+def test_execute_benchmark_stratifies_measured_phase_independently(
+    tmp_path: Path,
+) -> None:
+    """Warm-up slicing must not disturb the canonical measured distribution."""
+
+    def mock_sse_handler(request: httpx.Request) -> httpx.Response:
+        content = 'data: {"choices": [{"text": "Alpha Beta"}]}\n\ndata: [DONE]\n\n'
+        return httpx.Response(200, text=content)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(mock_sse_handler))
+    tokenizer = MockWordTokenizer()
+    workload = WorkloadConfig(
+        name="variable",
+        input_tokens=TokenLengthDistribution((8, 16, 24), (0.2, 0.6, 0.2)),
+        max_output_tokens=TokenLengthDistribution((4, 8, 12), (0.2, 0.6, 0.2)),
+        sampling_mode="stratified",
+    )
+    config = BenchmarkConfig(
+        model="test-model",
+        num_requests=10,
+        warmup_requests=5,
+        seed=42,
+        output_dir=str(tmp_path),
+        workload=workload,
+    )
+
+    async def _run() -> None:
+        run_dir, _, _ = await execute_benchmark(
+            config=config,
+            tokenizer=tokenizer,
+            client=client,
+        )
+        await client.aclose()
+        loaded = load_benchmark_run(run_dir)
+        measured = [row for row in loaded["workload"] if not row["is_warmup"]]
+
+        assert len(measured) == 10
+        assert sum(row["target_input_tokens"] for row in measured) / 10 == 16
+        assert sum(row["max_output_tokens"] for row in measured) / 10 == 8
+        workload_summary = loaded["summary"]["workload"]
+        assert workload_summary["sampling_mode"] == "stratified"
+        assert (
+            workload_summary["sampling_error"]["target_input_tokens"][
+                "mean_delta_tokens"
+            ]
+            == 0
+        )
+
+    asyncio.run(_run())

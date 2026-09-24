@@ -521,7 +521,7 @@ src/inference_os/
 ├── runner/
 │   └── load.py             # Open-loop scheduling, added only for E005
 ├── metrics/
-│   ├── workload.py         # Distribution and bucket summaries
+│   ├── buckets.py          # Per-length workload summaries (added in E004)
 │   └── slo.py              # SLO and goodput metrics, added only for E005
 └── results/
     └── persistence.py      # workload.jsonl integration
@@ -611,11 +611,13 @@ relative to chat, while the long-output summarization profile produced the
 highest E2E latency. It also demonstrated why input, output, and total-token
 throughput must be reported separately.
 
-The next engineering step is E004: compare fixed and heterogeneous workloads
-with similar mean token sizes, add length-bucket and distribution summaries,
-and quantify the effect of variability on tail latency. Open-loop scheduling,
-SLO evaluation, and cost metrics remain deferred until their planned
-experiments.
+The E004 implementation is now ready with mean-matched fixed and heterogeneous
+profiles, deterministic stratified sampling, configured-versus-realized
+distribution diagnostics, exact length-bucket summaries, P99 reporting, and
+comparison plots. The next operational step is to run its pilot and canonical
+GPU comparison, then preserve and analyze the resulting artifacts. Open-loop
+scheduling, SLO evaluation, and cost metrics remain deferred until their
+planned experiments.
 
 ---
 

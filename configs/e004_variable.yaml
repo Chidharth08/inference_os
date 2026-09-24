@@ -1,0 +1,26 @@
+# Heterogeneous profile with the same configured means as the fixed baseline.
+experiment_id: E004
+model: Qwen/Qwen2.5-7B-Instruct
+base_url: http://localhost:18000
+num_requests: 50
+warmup_requests: 5
+concurrency: 4
+seed: 42
+temperature: 0.0
+request_timeout_seconds: 300.0
+enable_prefix_caching: false
+enable_chunked_prefill: false
+telemetry_interval_seconds: 0.1
+device_index: 0
+output_dir: runs
+workload:
+  name: variable
+  sampling_mode: stratified
+  input_tokens:
+    values: [1024, 4096, 7168]
+    weights: [0.20, 0.60, 0.20]
+  max_output_tokens:
+    values: [128, 512, 896]
+    weights: [0.20, 0.60, 0.20]
+  prompt_reuse:
+    mode: none
