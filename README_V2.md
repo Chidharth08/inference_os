@@ -598,21 +598,24 @@ Do not implement E003 reports until this foundation is clean and tested.
 
 The current V2 milestone is:
 
-## Milestone V2.1 — E003 Application Shapes
+## Milestone V2.2 — E004 Heterogeneity
 
-Milestone V2.0 has been implemented locally with deterministic request plans,
-weighted token distributions, V1-compatible fixed workloads, request-plan
-persistence, and automated tests.
+Milestones V2.0 and V2.1 are complete. E003 preserved deterministic request
+plans and compared chat-like, RAG-like, and summarization-like token shapes on
+the canonical RTX 3090 environment. All 150 measured requests succeeded, and
+the raw measurements, telemetry, plots, and validation report are preserved in
+the repository.
 
-The immediate engineering question is:
+E003 found that long-input profiles increased median TTFT by roughly 9–10×
+relative to chat, while the long-output summarization profile produced the
+highest E2E latency. It also demonstrated why input, output, and total-token
+throughput must be reported separately.
 
-> How do synthetic chat-like, RAG-like, and summarization-like token shapes
-> affect latency and throughput when all serving controls remain fixed?
-
-The next operational step is to run the E003 pilot against the canonical vLLM
-server, inspect the artifacts, and only then run the full GPU comparison.
-Open-loop scheduling, SLO evaluation, and cost metrics remain deferred until
-their planned experiments.
+The next engineering step is E004: compare fixed and heterogeneous workloads
+with similar mean token sizes, add length-bucket and distribution summaries,
+and quantify the effect of variability on tail latency. Open-loop scheduling,
+SLO evaluation, and cost metrics remain deferred until their planned
+experiments.
 
 ---
 

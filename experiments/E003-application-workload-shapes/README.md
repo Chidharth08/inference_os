@@ -107,6 +107,33 @@ runs/E003_<timestamp>_<id>/
 Each profile run also contains `config.json`, `environment.json`, `summary.json`,
 `requests.jsonl`, `workload.jsonl`, and GPU telemetry when available.
 
+## Empirical Results (1× NVIDIA GeForce RTX 3090)
+
+- Run ID: `E003_20260924_051307_29213e50`
+- Source commit: `29ed58d6c0ee1edbf0077bd4b04aeba607b6e492`
+- Backend: vLLM 0.30.0, BF16
+- Workload: 50 measured requests per profile, 150/150 successful
+
+| Profile | Req/s | Input tok/s | Output tok/s | TTFT P50 | E2E P50 | Peak VRAM | Errors |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `chat_like` | 1.566 | 577.28 | 124.46 | 216.50 ms | 1.810 s | 18,060 MiB | 0% |
+| `rag_like` | 0.372 | 1,815.57 | 84.87 | 2,026.88 ms | 8.676 s | 21,024 MiB | 0% |
+| `summarization_like` | 0.218 | 1,082.44 | 112.94 | 2,131.41 ms | 17.293 s | 21,024 MiB | 0% |
+
+The main findings are:
+
+1. Chat achieved the highest request throughput and lowest latency.
+2. The two long-input profiles had roughly 9–10× chat's median TTFT.
+3. Summarization had the highest E2E latency because it combined long prefills
+   with long decoding.
+4. RAG had the highest total-token throughput due to input-token volume, despite
+   having the lowest output-token throughput.
+5. Long-context profiles used roughly 3 GiB more peak VRAM than chat.
+
+See the [complete validation report](../../outputs/e003_application_workload_shapes_validation.md),
+[canonical raw run](../../runs/E003_20260924_051307_29213e50/), and
+[publication plots](../../outputs/plots/e003/).
+
 ## Limitations
 
 - Profiles are synthetic and configuration-defined.

@@ -1,0 +1,269 @@
+{
+  "experiment_id": "E003",
+  "status": "SUCCESS",
+  "profile_count": 3,
+  "successful_profiles": 3,
+  "profiles": [
+    {
+      "profile_name": "chat_like",
+      "success": true,
+      "run_dir": "runs/E003_20260924_051307_29213e50/chat_like/E003_20260924_051400_a30ac7ab",
+      "benchmark": {
+        "total_requests": 50,
+        "successful_requests": 50,
+        "failed_requests": 0,
+        "total_input_tokens": 18432,
+        "total_output_tokens": 3974,
+        "total_duration_seconds": 31.929091812,
+        "request_throughput": 1.565970002980428,
+        "output_token_throughput": 124.46329583688443,
+        "input_token_throughput": 577.279181898705,
+        "total_token_throughput": 701.7424777355894,
+        "error_rate": 0.0,
+        "ttft_stats": {
+          "count": 50,
+          "mean": 0.24190919378,
+          "std_dev": 0.10827496708907453,
+          "min": 0.11583903,
+          "max": 0.540438588,
+          "p50": 0.2164996005,
+          "p90": 0.36104993920000006,
+          "p95": 0.5079878924499999,
+          "p99": 0.5347833225799999
+        },
+        "e2e_latency_stats": {
+          "count": 50,
+          "mean": 2.22288522308,
+          "std_dev": 1.3478739190989804,
+          "min": 0.845734549,
+          "max": 6.775908876,
+          "p50": 1.809691184,
+          "p90": 3.6245803539,
+          "p95": 4.891003137049994,
+          "p99": 6.7584765772
+        },
+        "tpot_stats": {
+          "count": 50,
+          "mean": 0.025230497967986355,
+          "std_dev": 0.0024000202915628243,
+          "min": 0.02161979077419355,
+          "max": 0.030834210095238096,
+          "p50": 0.024769197795275588,
+          "p90": 0.028970431947055814,
+          "p95": 0.02999718203663594,
+          "p99": 0.03076491847968254
+        },
+        "errors": null
+      },
+      "gpu": {
+        "sample_count": 287,
+        "peak_memory_used_mb": 18060,
+        "avg_memory_used_mb": 18010.01393728223,
+        "peak_utilization_gpu_pct": 100,
+        "avg_utilization_gpu_pct": 96.72473867595819,
+        "total_memory_mb": 24576
+      },
+      "workload": {
+        "profile_name": "chat_like",
+        "seed": 42,
+        "request_count": 50,
+        "target_input_tokens": {
+          "count": 50,
+          "mean": 368.64,
+          "std_dev": 284.03547924403347,
+          "min": 128.0,
+          "max": 1024.0,
+          "p50": 256.0,
+          "p90": 1024.0,
+          "p95": 1024.0,
+          "p99": 1024.0
+        },
+        "max_output_tokens": {
+          "count": 50,
+          "mean": 82.56,
+          "std_dev": 59.635683058698596,
+          "min": 32.0,
+          "max": 256.0,
+          "p50": 64.0,
+          "p90": 128.0,
+          "p95": 256.0,
+          "p99": 256.0
+        }
+      }
+    },
+    {
+      "profile_name": "rag_like",
+      "success": true,
+      "run_dir": "runs/E003_20260924_051307_29213e50/rag_like/E003_20260924_051642_954ad3d3",
+      "benchmark": {
+        "total_requests": 50,
+        "successful_requests": 50,
+        "failed_requests": 0,
+        "total_input_tokens": 243712,
+        "total_output_tokens": 11392,
+        "total_duration_seconds": 134.234119573,
+        "request_throughput": 0.37248353964737485,
+        "output_token_throughput": 84.8666496732579,
+        "input_token_throughput": 1815.5741682908206,
+        "total_token_throughput": 1900.4408179640784,
+        "error_rate": 0.0,
+        "ttft_stats": {
+          "count": 50,
+          "mean": 2.30295533238,
+          "std_dev": 1.4723483000872102,
+          "min": 0.568838996,
+          "max": 5.471072653,
+          "p50": 2.0268842205,
+          "p90": 4.9784373022,
+          "p95": 5.08950394735,
+          "p99": 5.2926568522899995
+        },
+        "e2e_latency_stats": {
+          "count": 50,
+          "mean": 10.3204799,
+          "std_dev": 4.992842675342719,
+          "min": 3.577125528,
+          "max": 25.40317514,
+          "p50": 8.676018182,
+          "p90": 17.109134203200004,
+          "p95": 20.965227937099996,
+          "p99": 24.612001714929995
+        },
+        "tpot_stats": {
+          "count": 50,
+          "mean": 0.03539215941701107,
+          "std_dev": 0.008684785433416919,
+          "min": 0.023085575655577298,
+          "max": 0.059220273377952756,
+          "p50": 0.03415958323333333,
+          "p90": 0.046545364305511816,
+          "p95": 0.05221965180236218,
+          "p99": 0.05841096794405002
+        },
+        "errors": null
+      },
+      "gpu": {
+        "sample_count": 1172,
+        "peak_memory_used_mb": 21024,
+        "avg_memory_used_mb": 20639.252559726963,
+        "peak_utilization_gpu_pct": 100,
+        "avg_utilization_gpu_pct": 99.55887372013652,
+        "total_memory_mb": 24576
+      },
+      "workload": {
+        "profile_name": "rag_like",
+        "seed": 42,
+        "request_count": 50,
+        "target_input_tokens": {
+          "count": 50,
+          "mean": 4874.24,
+          "std_dev": 2336.545108330953,
+          "min": 2048.0,
+          "max": 8192.0,
+          "p50": 4096.0,
+          "p90": 8192.0,
+          "p95": 8192.0,
+          "p99": 8192.0
+        },
+        "max_output_tokens": {
+          "count": 50,
+          "mean": 227.84,
+          "std_dev": 122.09052513004688,
+          "min": 128.0,
+          "max": 512.0,
+          "p50": 256.0,
+          "p90": 512.0,
+          "p95": 512.0,
+          "p99": 512.0
+        }
+      }
+    },
+    {
+      "profile_name": "summarization_like",
+      "success": true,
+      "run_dir": "runs/E003_20260924_051307_29213e50/summarization_like/E003_20260924_052117_3d2f0870",
+      "benchmark": {
+        "total_requests": 50,
+        "successful_requests": 50,
+        "failed_requests": 0,
+        "total_input_tokens": 247808,
+        "total_output_tokens": 25856,
+        "total_duration_seconds": 228.935552873,
+        "request_throughput": 0.2184020759228125,
+        "output_token_throughput": 112.94008150120479,
+        "input_token_throughput": 1082.4356326056063,
+        "total_token_throughput": 1195.375714106811,
+        "error_rate": 0.0,
+        "ttft_stats": {
+          "count": 50,
+          "mean": 2.29015645108,
+          "std_dev": 1.2266002828758085,
+          "min": 0.57664533,
+          "max": 5.455414722,
+          "p50": 2.1314117154999996,
+          "p90": 4.076787577799999,
+          "p95": 4.648111786599998,
+          "p99": 5.251543596219999
+        },
+        "e2e_latency_stats": {
+          "count": 50,
+          "mean": 17.50221321894,
+          "std_dev": 6.740426800301608,
+          "min": 7.184044662,
+          "max": 35.355801692,
+          "p50": 17.293326131999997,
+          "p90": 25.804654498400005,
+          "p95": 33.63289327015,
+          "p99": 34.912340695910004
+        },
+        "tpot_stats": {
+          "count": 50,
+          "mean": 0.029254114557669256,
+          "std_dev": 0.0032230997739548014,
+          "min": 0.023140821275659827,
+          "max": 0.039803907598825836,
+          "p50": 0.02883312051369863,
+          "p90": 0.03277764505264188,
+          "p95": 0.03366169614207436,
+          "p99": 0.03734032222834234
+        },
+        "errors": null
+      },
+      "gpu": {
+        "sample_count": 2011,
+        "peak_memory_used_mb": 21024,
+        "avg_memory_used_mb": 21024.0,
+        "peak_utilization_gpu_pct": 100,
+        "avg_utilization_gpu_pct": 99.78518150174042,
+        "total_memory_mb": 24576
+      },
+      "workload": {
+        "profile_name": "summarization_like",
+        "seed": 42,
+        "request_count": 50,
+        "target_input_tokens": {
+          "count": 50,
+          "mean": 4956.16,
+          "std_dev": 2380.100489732417,
+          "min": 2048.0,
+          "max": 8192.0,
+          "p50": 4096.0,
+          "p90": 8192.0,
+          "p95": 8192.0,
+          "p99": 8192.0
+        },
+        "max_output_tokens": {
+          "count": 50,
+          "mean": 517.12,
+          "std_dev": 216.29766338005933,
+          "min": 256.0,
+          "max": 1024.0,
+          "p50": 512.0,
+          "p90": 1024.0,
+          "p95": 1024.0,
+          "p99": 1024.0
+        }
+      }
+    }
+  ]
+}
