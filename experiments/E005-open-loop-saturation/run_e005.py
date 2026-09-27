@@ -51,9 +51,7 @@ async def execute_e005(
     points: list[dict[str, Any]] = []
     for rate in sweep.request_rates:
         duration_seconds = sweep.duration_for_rate(rate)
-        request_count = len(
-            constant_rate_arrival_offsets(rate, duration_seconds)
-        )
+        request_count = len(constant_rate_arrival_offsets(rate, duration_seconds))
         point_config = replace(
             sweep.base_config,
             experiment_id=sweep.experiment_id,
@@ -71,8 +69,7 @@ async def execute_e005(
         )
         load = {
             "offered_rate": rate,
-            "realized_offered_rate": len(result.measured_requests)
-            / duration_seconds,
+            "realized_offered_rate": len(result.measured_requests) / duration_seconds,
             "offered_duration_seconds": duration_seconds,
             "measured_duration_seconds": result.measured_duration_seconds,
             "offered_requests": len(result.measured_requests),
@@ -97,9 +94,7 @@ async def execute_e005(
         )
 
     passing_rates = [
-        point["offered_rate"]
-        for point in points
-        if point["slo"]["all_objectives_met"]
+        point["offered_rate"] for point in points if point["slo"]["all_objectives_met"]
     ]
     summary = {
         "experiment_id": "E005",

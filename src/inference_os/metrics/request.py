@@ -96,6 +96,4 @@ class RequestMeasurement:
         """Client scheduling delay from planned arrival to actual dispatch."""
         if self.scheduled_time_ns is None or self.dispatch_time_ns is None:
             return None
-        return (
-            self.dispatch_time_ns - self.scheduled_time_ns
-        ) / NANOSECONDS_PER_SECOND
+        return (self.dispatch_time_ns - self.scheduled_time_ns) / NANOSECONDS_PER_SECOND

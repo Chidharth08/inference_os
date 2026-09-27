@@ -265,9 +265,7 @@ class OpenLoopSweepConfig:
         if len(set(self.request_rates)) != len(self.request_rates):
             raise ValueError("request_rates entries must be unique")
         if (self.duration_seconds is None) == (self.requests_per_rate is None):
-            raise ValueError(
-                "set exactly one of duration_seconds or requests_per_rate"
-            )
+            raise ValueError("set exactly one of duration_seconds or requests_per_rate")
         if self.duration_seconds is not None and self.duration_seconds <= 0:
             raise ValueError("duration_seconds must be positive")
         if self.requests_per_rate is not None and self.requests_per_rate <= 0:

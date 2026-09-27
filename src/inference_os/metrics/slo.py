@@ -49,18 +49,13 @@ def evaluate_slo(
         if measurement.ttft_seconds is not None
     )
     e2es = sorted(measurement.e2e_latency_seconds for measurement in successful)
-    ttft_percentile = (
-        _calculate_percentile(ttfts, slo.percentile) if ttfts else None
-    )
+    ttft_percentile = _calculate_percentile(ttfts, slo.percentile) if ttfts else None
     e2e_percentile = _calculate_percentile(e2es, slo.percentile) if e2es else None
     compliant = sum(request_meets_slo(measurement, slo) for measurement in measurements)
     error_rate = (total - len(successful)) / total if total else 0.0
-    ttft_met = (
-        ttft_percentile is not None and ttft_percentile <= slo.max_ttft_seconds
-    )
+    ttft_met = ttft_percentile is not None and ttft_percentile <= slo.max_ttft_seconds
     e2e_met = (
-        e2e_percentile is not None
-        and e2e_percentile <= slo.max_e2e_latency_seconds
+        e2e_percentile is not None and e2e_percentile <= slo.max_e2e_latency_seconds
     )
     error_met = error_rate <= slo.max_error_rate
     return SLOSummary(

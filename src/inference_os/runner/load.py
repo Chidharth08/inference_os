@@ -96,9 +96,7 @@ async def run_open_loop(
                 clock_fn,
             )
         )
-    warmup_duration = (
-        (clock_fn() - warmup_start) / 1e9 if warmup_requests else 0.0
-    )
+    warmup_duration = (clock_fn() - warmup_start) / 1e9 if warmup_requests else 0.0
     warmup_summary = (
         compute_benchmark_summary(warmups, warmup_duration) if warmups else None
     )
@@ -186,9 +184,7 @@ async def run_open_loop(
                 scheduled_time_ns=target_ns,
                 dispatch_time_ns=now,
             )
-            in_flight_samples.append(
-                InFlightSample(now, in_flight, "drop", request_id)
-            )
+            in_flight_samples.append(InFlightSample(now, in_flight, "drop", request_id))
             continue
         dispatched += 1
         in_flight += 1
