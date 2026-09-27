@@ -12,8 +12,8 @@ def test_load_e005_config() -> None:
     assert isinstance(config, OpenLoopSweepConfig)
     assert config.request_rates == (0.5, 1.0, 2.0, 3.0, 4.0)
     assert config.duration_seconds is None
-    assert config.requests_per_rate == 50
-    assert config.duration_for_rate(2.0) == 25.0
+    assert config.requests_per_rate == 30
+    assert config.duration_for_rate(2.0) == 15.0
     assert config.base_config.workload is not None
     assert config.slo == SLOConfig()
 

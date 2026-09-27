@@ -17,14 +17,14 @@ pressure is visible rather than hidden by client self-throttling.
 - Model: `Qwen/Qwen2.5-7B-Instruct`
 - Arrival process: deterministic constant rate
 - Offered rates: 0.5, 1, 2, 3, and 4 requests/s
-- Requests: 50 scheduled arrivals per rate point (250 total)
-- Arrival duration: `50 / offered rate` seconds per point
+- Requests: 30 scheduled arrivals per rate point (150 total)
+- Arrival duration: `30 / offered rate` seconds per point
 - Workload: the E003 synthetic chat-like token distribution
 - Prefix caching and chunked prefill: disabled
 - Temperature: 0
 - One GPU and one vLLM server configuration for the complete sweep
 
-Using the same 50-request plan at every rate controls workload composition while
+Using the same 30-request plan at every rate controls workload composition while
 the clock-derived duration preserves each requested arrival rate. These rates are
 starting points, not universal capacity claims. If every point passes
 comfortably, extend the upper end. If the lowest point is already overloaded, lower
@@ -51,7 +51,7 @@ dropped, and drain-timed-out requests count as non-compliant.
 
 `measured wall-clock second` starts when the arrival schedule starts and ends after
 the last dispatched request completes or the drain deadline cancels remaining work.
-It therefore includes backlog drain time. Each arrival window is `50 / rate` seconds
+It therefore includes backlog drain time. Each arrival window is `30 / rate` seconds
 and remains recorded separately so it is not confused with the observation window.
 
 ## Overload safety and queue interpretation

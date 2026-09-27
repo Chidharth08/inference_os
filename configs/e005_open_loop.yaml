@@ -13,9 +13,9 @@ device_index: 0
 output_dir: runs
 
 # Five independent load points, from light traffic into pressure. Each point
-# schedules the same 50-request workload plan; its arrival window is 50 / rate.
+# schedules the same 30-request workload plan; its arrival window is 30 / rate.
 request_rates: [0.5, 1.0, 2.0, 3.0, 4.0]
-requests_per_rate: 50
+requests_per_rate: 30
 
 # Safety boundaries. Arrivals are recorded as overload drops rather than queued
 # without bound when the cap is full. Remaining work gets this long to drain.
