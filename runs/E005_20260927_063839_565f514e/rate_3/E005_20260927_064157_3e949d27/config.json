@@ -1,0 +1,64 @@
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "base_url": "http://localhost:18000",
+  "prompt_tokens": 128,
+  "max_output_tokens": 64,
+  "num_requests": 30,
+  "warmup_requests": 5,
+  "seed": 42,
+  "temperature": 0.0,
+  "request_timeout_seconds": 300.0,
+  "telemetry_interval_seconds": 0.1,
+  "device_index": 0,
+  "experiment_id": "E005",
+  "output_dir": "runs/E005_20260927_063839_565f514e/rate_3",
+  "enable_prefix_caching": false,
+  "chunked_prefill": null,
+  "enable_chunked_prefill": false,
+  "concurrency": 1,
+  "workload": {
+    "name": "chat_like_open_loop",
+    "input_tokens": {
+      "values": [
+        128,
+        256,
+        512,
+        1024
+      ],
+      "weights": [
+        0.25,
+        0.4,
+        0.25,
+        0.1
+      ]
+    },
+    "max_output_tokens": {
+      "values": [
+        32,
+        64,
+        128,
+        256
+      ],
+      "weights": [
+        0.25,
+        0.4,
+        0.25,
+        0.1
+      ]
+    },
+    "prompt_reuse": {
+      "mode": "none"
+    },
+    "sampling_mode": "stratified"
+  },
+  "request_rate": 3.0,
+  "duration_seconds": 10.0,
+  "max_in_flight": 64,
+  "max_drain_seconds": 300.0,
+  "slo": {
+    "max_ttft_seconds": 1.0,
+    "max_e2e_latency_seconds": 5.0,
+    "max_error_rate": 0.01,
+    "percentile": 95.0
+  }
+}

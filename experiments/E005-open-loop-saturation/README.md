@@ -119,3 +119,35 @@ late completions still add throughput but no longer deliver service within the S
 It is bounded by this discrete sweep, workload, SLO, hardware, software, and server
 configuration. E005 deliberately does not turn it into an automatic production
 capacity recommendation.
+
+## Empirical Results (1× NVIDIA GeForce RTX 3090)
+
+- Run ID: `E005_20260927_063839_565f514e`
+- Source commit: `1d88839f13e3c8d33b5e991e569f08a460b0a319`
+- Backend: vLLM 0.30.0, BF16
+- Workload: 30 measured requests at each of five rates; 150/150 successful
+- Errors, overload drops, and drain timeouts: zero
+
+| Offered req/s | Achieved req/s | Goodput req/s | TTFT P95 | E2E P95 | Peak in flight | SLO |
+| ---: | ---: | ---: | ---: | ---: | ---: | :--- |
+| 0.5 | 0.503 | 0.453 | 338.93 ms | 6.560 s | 3 | Fail |
+| 1.0 | 0.974 | 0.877 | 365.28 ms | 7.046 s | 4 | Fail |
+| 2.0 | 1.715 | 1.543 | 359.70 ms | 7.831 s | 9 | Fail |
+| 3.0 | 2.109 | 1.828 | 360.26 ms | 7.950 s | 11 | Fail |
+| 4.0 | 2.359 | 1.888 | 382.22 ms | 8.082 s | 15 | Fail |
+
+All requests completed, but achieved throughput increasingly diverged from
+offered load above 1 request/s while in-flight pressure grew. Goodput nearly
+plateaued between 3 and 4 requests/s. Together these observations place the
+observed saturation region around and above 2 requests/s, without locating an
+exact knee.
+
+The complete SLO failed at every point only because E2E P95 exceeded its
+5-second limit. TTFT P95 stayed below 1 second and error rate stayed at zero.
+Therefore this sweep does not identify a passing sustainable rate under the
+exact configured SLO; the rate may be below 0.5 requests/s, or the E2E objective
+may be too strict for this workload's long-output tail.
+
+See the [complete validation report](../../outputs/e005_open_loop_validation.md),
+[canonical raw run](../../runs/E005_20260927_063839_565f514e/), and
+[publication plots](../../outputs/plots/e005/).

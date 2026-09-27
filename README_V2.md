@@ -598,7 +598,7 @@ Do not implement E003 reports until this foundation is clean and tested.
 
 The current V2 milestone is:
 
-## Milestone V2.3 — E005 Sustainable Load
+## Milestone V2.4 — E006 Serving Economics
 
 Milestones V2.0 and V2.1 are complete. E003 preserved deterministic request
 plans and compared chat-like, RAG-like, and summarization-like token shapes on
@@ -617,12 +617,19 @@ but the variable workload increased E2E P95 by 76.6% and P99 by 83.6%. The raw
 measurements, exact plans, bucket summaries, telemetry, plots, and validation
 report are preserved in the repository.
 
-The E005 implementation is ready for its GPU pilot and canonical run. It adds
-constant-rate open-loop scheduling, duration-based execution, explicit overload
-and drain safeguards, latency/error SLO evaluation, goodput, in-flight timelines,
-and load-sweep plots. The saturation knee remains an empirical result: it will be
-identified only after the canonical rate sweep is run. Cost metrics remain
-deferred until E006.
+E005 is complete. Its open-loop sweep completed all 150 measured requests with
+zero errors, drops, or drain timeouts. Achieved throughput increasingly diverged
+from offered load above 1 request/s, peak in-flight work rose from 3 to 15, and
+goodput nearly plateaued between 3 and 4 requests/s. These signals place the
+observed saturation region around and above 2 requests/s without claiming an
+exact knee from five short, discrete points.
+
+No point passed the complete configured SLO: TTFT P95 and error objectives
+passed everywhere, but E2E P95 exceeded the 5-second objective even at 0.5
+requests/s. The raw measurements, exact plans, in-flight timelines, telemetry,
+plots, and validation report are preserved in the repository. The next milestone
+is E006 serving economics; its estimates must use an explicitly selected measured
+load point and state that the current E2E SLO has no passing E005 point.
 
 ---
 
