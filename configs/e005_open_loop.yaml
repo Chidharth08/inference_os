@@ -1,0 +1,41 @@
+# Synthetic chat-shaped traffic under deterministic constant-rate arrivals.
+experiment_id: E005
+model: Qwen/Qwen2.5-7B-Instruct
+base_url: http://localhost:18000
+warmup_requests: 5
+seed: 42
+temperature: 0.0
+request_timeout_seconds: 300.0
+enable_prefix_caching: false
+enable_chunked_prefill: false
+telemetry_interval_seconds: 0.1
+device_index: 0
+output_dir: runs
+
+# Five independent load points, from light traffic into pressure. Each point
+# schedules the same 50-request workload plan; its arrival window is 50 / rate.
+request_rates: [0.5, 1.0, 2.0, 3.0, 4.0]
+requests_per_rate: 50
+
+# Safety boundaries. Arrivals are recorded as overload drops rather than queued
+# without bound when the cap is full. Remaining work gets this long to drain.
+max_in_flight: 64
+max_drain_seconds: 300.0
+
+slo:
+  percentile: 95.0
+  max_ttft_seconds: 1.0
+  max_e2e_latency_seconds: 5.0
+  max_error_rate: 0.01
+
+workload:
+  name: chat_like_open_loop
+  sampling_mode: stratified
+  input_tokens:
+    values: [128, 256, 512, 1024]
+    weights: [0.25, 0.40, 0.25, 0.10]
+  max_output_tokens:
+    values: [32, 64, 128, 256]
+    weights: [0.25, 0.40, 0.25, 0.10]
+  prompt_reuse:
+    mode: none

@@ -1031,3 +1031,95 @@ def generate_e004_plots(
         generated.append(gpu_path)
 
     return generated
+
+
+def generate_e005_plots(
+    load_points: Sequence[dict[str, Any]],
+    output_dir: Path | str,
+) -> list[Path]:
+    """Generate throughput, SLO, latency, and pressure plots for E005."""
+    out_path = Path(output_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    points = sorted(load_points, key=lambda point: float(point["offered_rate"]))
+    if not points:
+        return []
+
+    rates = [float(point["offered_rate"]) for point in points]
+    throughput = [float(point["benchmark"]["request_throughput"]) for point in points]
+    goodput = [float(point["slo"]["goodput"]) for point in points]
+    generated: list[Path] = []
+
+    capacity_path = out_path / "throughput_and_goodput_vs_offered_rate.png"
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(rates, rates, "k:", label="Ideal: achieved = offered")
+    ax.plot(rates, throughput, "o-", label="Completed throughput")
+    ax.plot(rates, goodput, "s-", label="SLO goodput")
+    ax.set_title("E005: Capacity and Useful Throughput", fontweight="bold")
+    ax.set_xlabel("Offered rate (requests/s)")
+    ax.set_ylabel("Measured rate (requests/s)")
+    ax.grid(True, linestyle="--", alpha=0.5)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(capacity_path, dpi=200)
+    plt.close(fig)
+    generated.append(capacity_path)
+
+    latency_path = out_path / "latency_vs_offered_rate.png"
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    for ax, metric, title, unit_scale, unit in (
+        (axes[0], "ttft_stats", "Time to First Token", 1000.0, "ms"),
+        (axes[1], "e2e_latency_stats", "End-to-End Latency", 1.0, "seconds"),
+    ):
+        for quantile, style in (("p50", "o-"), ("p95", "s--"), ("p99", "^:")):
+            values = [
+                float((point["benchmark"].get(metric) or {}).get(quantile, 0.0))
+                * unit_scale
+                for point in points
+            ]
+            ax.plot(rates, values, style, label=quantile.upper())
+        ax.set_title(title, fontweight="bold")
+        ax.set_xlabel("Offered rate (requests/s)")
+        ax.set_ylabel(unit)
+        ax.grid(True, linestyle="--", alpha=0.5)
+        ax.legend()
+    fig.suptitle("E005: Latency Growth Under Open-Loop Load", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(latency_path, dpi=200)
+    plt.close(fig)
+    generated.append(latency_path)
+
+    pressure_path = out_path / "pressure_and_slo_vs_offered_rate.png"
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    axes[0].plot(
+        rates,
+        [float(point["load"]["max_observed_in_flight"]) for point in points],
+        "o-",
+    )
+    axes[0].set_title("Peak In-Flight Requests", fontweight="bold")
+    axes[0].set_xlabel("Offered rate (requests/s)")
+    axes[0].set_ylabel("requests")
+    axes[0].grid(True, linestyle="--", alpha=0.5)
+    axes[1].plot(
+        rates,
+        [float(point["slo"]["compliance_rate"]) * 100.0 for point in points],
+        "o-",
+        label="SLO compliance",
+    )
+    axes[1].plot(
+        rates,
+        [float(point["benchmark"]["error_rate"]) * 100.0 for point in points],
+        "s--",
+        label="Error/drop rate",
+    )
+    axes[1].set_title("Service Quality", fontweight="bold")
+    axes[1].set_xlabel("Offered rate (requests/s)")
+    axes[1].set_ylabel("requests (%)")
+    axes[1].set_ylim(0, 105)
+    axes[1].grid(True, linestyle="--", alpha=0.5)
+    axes[1].legend()
+    fig.suptitle("E005: Queue Pressure and SLO Health", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(pressure_path, dpi=200)
+    plt.close(fig)
+    generated.append(pressure_path)
+    return generated

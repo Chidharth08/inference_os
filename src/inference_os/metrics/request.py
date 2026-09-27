@@ -21,6 +21,8 @@ class RequestMeasurement:
     success: bool
     first_token_time_ns: Optional[int] = None
     error_message: Optional[str] = None
+    scheduled_time_ns: Optional[int] = None
+    dispatch_time_ns: Optional[int] = None
 
     def __post_init__(self) -> None:
         """Enforce timestamp and count invariants upon construction."""
@@ -52,6 +54,13 @@ class RequestMeasurement:
                     f"first_token_time_ns ({self.first_token_time_ns}) cannot be after "
                     f"completion_time_ns ({self.completion_time_ns})"
                 )
+        if self.scheduled_time_ns is not None and self.scheduled_time_ns < 0:
+            raise ValueError("scheduled_time_ns must be non-negative")
+        if self.dispatch_time_ns is not None:
+            if self.scheduled_time_ns is None:
+                raise ValueError("dispatch_time_ns requires scheduled_time_ns")
+            if self.dispatch_time_ns < self.scheduled_time_ns:
+                raise ValueError("dispatch_time_ns cannot precede scheduled_time_ns")
 
     @property
     def ttft_seconds(self) -> Optional[float]:
@@ -81,3 +90,10 @@ class RequestMeasurement:
         decode_tokens = self.output_tokens - 1
         decode_time_ns = self.completion_time_ns - self.first_token_time_ns
         return (decode_time_ns / decode_tokens) / NANOSECONDS_PER_SECOND
+
+    @property
+    def dispatch_delay_seconds(self) -> Optional[float]:
+        """Client scheduling delay from planned arrival to actual dispatch."""
+        if self.scheduled_time_ns is None or self.dispatch_time_ns is None:
+            return None
+        return (self.dispatch_time_ns - self.scheduled_time_ns) / NANOSECONDS_PER_SECOND
