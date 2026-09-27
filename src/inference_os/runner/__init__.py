@@ -6,6 +6,8 @@ from inference_os.runner.benchmark import (
     run_sequential_benchmark,
 )
 from inference_os.runner.engine import execute_benchmark
+from inference_os.runner.load import OpenLoopResult, run_open_loop
+from inference_os.runner.load_engine import execute_open_loop_benchmark
 from inference_os.runner.request import run_single_request
 from inference_os.runner.sweep import execute_sweep
 
@@ -16,4 +18,7 @@ __all__ = [
     "execute_benchmark",
     "execute_sweep",
     "BenchmarkResult",
+    "OpenLoopResult",
+    "run_open_loop",
+    "execute_open_loop_benchmark",
 ]

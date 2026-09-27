@@ -570,7 +570,7 @@ Do not implement E003 reports until this foundation is clean and tested.
 - add input and total token throughput,
 - produce plots and the E003 report.
 
-## Milestone V2.3 — E005 Sustainable Load
+## Milestone V2.2 — E004 Heterogeneity
 
 - construct fixed and variable workloads with similar means,
 - add distribution and length-bucket summaries,
@@ -598,7 +598,7 @@ Do not implement E003 reports until this foundation is clean and tested.
 
 The current V2 milestone is:
 
-## Milestone V2.2 — E004 Heterogeneity
+## Milestone V2.3 — E005 Sustainable Load
 
 Milestones V2.0 and V2.1 are complete. E003 preserved deterministic request
 plans and compared chat-like, RAG-like, and summarization-like token shapes on
@@ -617,10 +617,12 @@ but the variable workload increased E2E P95 by 76.6% and P99 by 83.6%. The raw
 measurements, exact plans, bucket summaries, telemetry, plots, and validation
 report are preserved in the repository.
 
-The next engineering milestone is E005: constant-rate open-loop scheduling,
-duration-based execution, overload safeguards, explicit latency SLOs, goodput,
-and identification of the saturation knee. Cost metrics remain deferred until
-E006.
+The E005 implementation is ready for its GPU pilot and canonical run. It adds
+constant-rate open-loop scheduling, duration-based execution, explicit overload
+and drain safeguards, latency/error SLO evaluation, goodput, in-flight timelines,
+and load-sweep plots. The saturation knee remains an empirical result: it will be
+identified only after the canonical rate sweep is run. Cost metrics remain
+deferred until E006.
 
 ---
 

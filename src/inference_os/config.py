@@ -220,7 +220,121 @@ class SweepConfig:
         return cls.from_dict(data)
 
 
-def load_config(file_path: Path | str) -> BenchmarkConfig | SweepConfig:
+@dataclass(frozen=True, slots=True)
+class SLOConfig:
+    """Latency and reliability objectives evaluated at each load point."""
+
+    max_ttft_seconds: float = 1.0
+    max_e2e_latency_seconds: float = 5.0
+    max_error_rate: float = 0.01
+    percentile: float = 95.0
+
+    def __post_init__(self) -> None:
+        if self.max_ttft_seconds <= 0:
+            raise ValueError("max_ttft_seconds must be positive")
+        if self.max_e2e_latency_seconds <= 0:
+            raise ValueError("max_e2e_latency_seconds must be positive")
+        if not 0.0 <= self.max_error_rate <= 1.0:
+            raise ValueError("max_error_rate must be between 0 and 1")
+        if not 0.0 < self.percentile <= 100.0:
+            raise ValueError("percentile must be in (0, 100]")
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> SLOConfig:
+        return cls(**data)
+
+
+@dataclass(frozen=True, slots=True)
+class OpenLoopSweepConfig:
+    """Duration-based constant-rate load sweep configuration."""
+
+    request_rates: tuple[float, ...]
+    max_in_flight: int
+    max_drain_seconds: float
+    base_config: BenchmarkConfig
+    slo: SLOConfig
+    duration_seconds: Optional[float] = None
+    requests_per_rate: Optional[int] = None
+    experiment_id: str = "E005"
+
+    def __post_init__(self) -> None:
+        if not self.request_rates:
+            raise ValueError("request_rates cannot be empty")
+        if any(rate <= 0 for rate in self.request_rates):
+            raise ValueError("request_rates entries must be positive")
+        if len(set(self.request_rates)) != len(self.request_rates):
+            raise ValueError("request_rates entries must be unique")
+        if (self.duration_seconds is None) == (self.requests_per_rate is None):
+            raise ValueError(
+                "set exactly one of duration_seconds or requests_per_rate"
+            )
+        if self.duration_seconds is not None and self.duration_seconds <= 0:
+            raise ValueError("duration_seconds must be positive")
+        if self.requests_per_rate is not None and self.requests_per_rate <= 0:
+            raise ValueError("requests_per_rate must be positive")
+        if self.max_in_flight <= 0:
+            raise ValueError("max_in_flight must be positive")
+        if self.max_drain_seconds <= 0:
+            raise ValueError("max_drain_seconds must be positive")
+
+    def to_dict(self) -> dict[str, Any]:
+        data = self.base_config.to_dict()
+        data.update(
+            {
+                "experiment_id": self.experiment_id,
+                "request_rates": list(self.request_rates),
+                "duration_seconds": self.duration_seconds,
+                "requests_per_rate": self.requests_per_rate,
+                "max_in_flight": self.max_in_flight,
+                "max_drain_seconds": self.max_drain_seconds,
+                "slo": asdict(self.slo),
+            }
+        )
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> OpenLoopSweepConfig:
+        data = dict(data)
+        raw_rates = data.pop("request_rates", None)
+        if not isinstance(raw_rates, Sequence) or isinstance(raw_rates, str):
+            raise ValueError("request_rates must be a list of numbers")
+        raw_duration = data.pop("duration_seconds", None)
+        duration_seconds = float(raw_duration) if raw_duration is not None else None
+        raw_request_count = data.pop("requests_per_rate", None)
+        requests_per_rate = (
+            int(raw_request_count) if raw_request_count is not None else None
+        )
+        max_in_flight = int(data.pop("max_in_flight", 128))
+        max_drain_seconds = float(data.pop("max_drain_seconds", 300.0))
+        slo_data = data.pop("slo", {})
+        if not isinstance(slo_data, dict):
+            raise ValueError("slo must be a mapping")
+        experiment_id = str(data.get("experiment_id", "E005"))
+        base_config = BenchmarkConfig.from_dict(data)
+        return cls(
+            request_rates=tuple(float(rate) for rate in raw_rates),
+            duration_seconds=duration_seconds,
+            requests_per_rate=requests_per_rate,
+            max_in_flight=max_in_flight,
+            max_drain_seconds=max_drain_seconds,
+            base_config=base_config,
+            slo=SLOConfig.from_dict(slo_data),
+            experiment_id=experiment_id,
+        )
+
+    def duration_for_rate(self, request_rate: float) -> float:
+        """Return the configured or request-count-derived arrival duration."""
+        if request_rate <= 0:
+            raise ValueError("request_rate must be positive")
+        if self.requests_per_rate is not None:
+            return self.requests_per_rate / request_rate
+        assert self.duration_seconds is not None
+        return self.duration_seconds
+
+
+def load_config(
+    file_path: Path | str,
+) -> BenchmarkConfig | SweepConfig | OpenLoopSweepConfig:
     """Load configuration from a YAML or JSON file.
 
     Automatically discriminates between single-run BenchmarkConfig and SweepConfig.
@@ -244,6 +358,8 @@ def load_config(file_path: Path | str) -> BenchmarkConfig | SweepConfig:
     if not isinstance(data, dict):
         raise ValueError(f"Config file {path} did not contain a valid mapping")
 
+    if "request_rates" in data:
+        return OpenLoopSweepConfig.from_dict(data)
     if "sweep_param" in data or "sweep_values" in data:
         return SweepConfig.from_dict(data)
     return BenchmarkConfig.from_dict(data)

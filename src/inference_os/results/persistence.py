@@ -29,6 +29,9 @@ def save_benchmark_run(
     run_id: Optional[str] = None,
     warmup_workload_specs: Optional[Sequence[RequestSpec]] = None,
     workload_specs: Optional[Sequence[RequestSpec]] = None,
+    extra_config: Optional[dict[str, Any]] = None,
+    extra_summary: Optional[dict[str, Any]] = None,
+    in_flight_samples: Optional[Sequence[Any]] = None,
 ) -> Path:
     """Save complete benchmark run artifacts to disk.
 
@@ -77,7 +80,10 @@ def save_benchmark_run(
     # 1. Write config.json
     config_path = run_dir / "config.json"
     with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(config.to_dict(), f, indent=2)
+        config_data = config.to_dict()
+        if extra_config:
+            config_data.update(extra_config)
+        json.dump(config_data, f, indent=2)
 
     # 2. Write environment.json
     env_path = run_dir / "environment.json"
@@ -94,6 +100,8 @@ def save_benchmark_run(
         "gpu": asdict(gpu_summary) if gpu_summary is not None else None,
         "workload": _summarize_workload(config, measured_specs),
     }
+    if extra_summary:
+        summary_data.update(extra_summary)
     summary_path = run_dir / "summary.json"
     with open(summary_path, "w", encoding="utf-8") as f:
         json.dump(summary_data, f, indent=2)
@@ -118,6 +126,7 @@ def save_benchmark_run(
             req_dict["is_warmup"] = True
             req_dict["ttft_seconds"] = req.ttft_seconds
             req_dict["e2e_latency_seconds"] = req.e2e_latency_seconds
+            req_dict["dispatch_delay_seconds"] = req.dispatch_delay_seconds
             f.write(json.dumps(req_dict) + "\n")
 
         for req in result.measured_requests:
@@ -125,6 +134,7 @@ def save_benchmark_run(
             req_dict["is_warmup"] = False
             req_dict["ttft_seconds"] = req.ttft_seconds
             req_dict["e2e_latency_seconds"] = req.e2e_latency_seconds
+            req_dict["dispatch_delay_seconds"] = req.dispatch_delay_seconds
             f.write(json.dumps(req_dict) + "\n")
 
     # 6. Write telemetry.jsonl
@@ -133,6 +143,12 @@ def save_benchmark_run(
         with open(telemetry_path, "w", encoding="utf-8") as f:
             for s in gpu_samples:
                 f.write(json.dumps(asdict(s)) + "\n")
+
+    if in_flight_samples is not None:
+        in_flight_path = run_dir / "in_flight.jsonl"
+        with open(in_flight_path, "w", encoding="utf-8") as f:
+            for sample in in_flight_samples:
+                f.write(json.dumps(asdict(sample)) + "\n")
 
     return run_dir
 
@@ -176,6 +192,14 @@ def load_benchmark_run(run_dir: Path | str) -> dict[str, Any]:
                 if line.strip():
                     workload.append(json.loads(line))
 
+    in_flight: list[dict[str, Any]] = []
+    in_flight_file = path / "in_flight.jsonl"
+    if in_flight_file.exists():
+        with open(in_flight_file, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    in_flight.append(json.loads(line))
+
     return {
         "run_dir": str(path),
         "config": config,
@@ -184,6 +208,7 @@ def load_benchmark_run(run_dir: Path | str) -> dict[str, Any]:
         "requests": requests,
         "workload": workload,
         "telemetry": telemetry,
+        "in_flight": in_flight,
     }
 
 
