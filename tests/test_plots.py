@@ -8,6 +8,7 @@ from inference_os.reports.plots import (
     generate_e002_plots,
     generate_e003_plots,
     generate_e004_plots,
+    generate_e006_plots,
 )
 
 
@@ -362,5 +363,32 @@ def test_generate_e004_plots(tmp_path: Path) -> None:
         "throughput_by_profile.png",
         "length_bucket_latency.png",
         "gpu_by_profile.png",
+    }
+    assert all(path.stat().st_size > 1000 for path in generated)
+
+
+def test_generate_e006_plots(tmp_path: Path) -> None:
+    points = []
+    for rate, compliance in ((0.5, 0.9), (2.0, 0.85), (4.0, 0.7)):
+        points.append(
+            {
+                "offered_rate": rate,
+                "slo_compliance_rate": compliance,
+                "cost_metrics": {
+                    "cost_per_1000_completed_requests": 0.1 / rate,
+                    "cost_per_1000_slo_compliant_requests": 0.1 / (rate * compliance),
+                    "cost_per_million_input_tokens": 0.04 / rate,
+                    "cost_per_million_output_tokens": 0.2 / rate,
+                    "cost_per_million_total_tokens": 0.03 / rate,
+                },
+            }
+        )
+
+    generated = generate_e006_plots(points, tmp_path / "plots", currency="USD")
+
+    assert {path.name for path in generated} == {
+        "cost_per_1000_requests_vs_offered_rate.png",
+        "cost_per_million_tokens_vs_offered_rate.png",
+        "cost_quality_tradeoff.png",
     }
     assert all(path.stat().st_size > 1000 for path in generated)

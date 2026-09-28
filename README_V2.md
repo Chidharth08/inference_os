@@ -522,7 +522,8 @@ src/inference_os/
 │   └── load.py             # Open-loop scheduling, added only for E005
 ├── metrics/
 │   ├── buckets.py          # Per-length workload summaries (added in E004)
-│   └── slo.py              # SLO and goodput metrics, added only for E005
+│   ├── slo.py              # SLO and goodput metrics, added only for E005
+│   └── economics.py        # Explicit cost assumptions and metrics for E006
 └── results/
     └── persistence.py      # workload.jsonl integration
 
@@ -532,7 +533,8 @@ configs/
 ├── e003_summarization_like.yaml
 ├── e004_fixed.yaml
 ├── e004_variable.yaml
-└── e005_open_loop.yaml
+├── e005_open_loop.yaml
+└── e006_economics.yaml
 
 experiments/
 ├── E003-application-workload-shapes/
@@ -598,7 +600,7 @@ Do not implement E003 reports until this foundation is clean and tested.
 
 The current V2 milestone is:
 
-## Milestone V2.4 — E006 Serving Economics
+## V2 Complete
 
 Milestones V2.0 and V2.1 are complete. E003 preserved deterministic request
 plans and compared chat-like, RAG-like, and summarization-like token shapes on
@@ -628,8 +630,21 @@ No point passed the complete configured SLO: TTFT P95 and error objectives
 passed everywhere, but E2E P95 exceeded the 5-second objective even at 0.5
 requests/s. The raw measurements, exact plans, in-flight timelines, telemetry,
 plots, and validation report are preserved in the repository. The next milestone
-is E006 serving economics; its estimates must use an explicitly selected measured
-load point and state that the current E2E SLO has no passing E005 point.
+was E006 serving economics; its estimates therefore state that the current E2E
+SLO has no passing E005 point.
+
+E006 is complete as an offline analysis of the canonical E005 measurements. At
+the explicit estimate of USD 0.190 per GPU-hour, the five measured windows cost
+approximately USD 0.007231 after applying one-second per-point billing increments.
+Cost per 1,000 completed requests fell from USD 0.1056 at 0.5 offered requests/s
+to USD 0.0229 at 4 requests/s, while individual SLO compliance fell from 90% to
+80%. No point is labeled sustainable because the aggregate E2E SLO failed.
+
+The approximate USD 0.50 session credit decrease is reported separately rather
+than divided across requests. The unallocated difference includes unknown setup,
+model-transfer, storage, bandwidth, warm-up, idle-time, and other session costs.
+All E006 assumptions, formulas, summaries, plots, tests, and limitations are now
+preserved alongside the E003–E005 evidence, completing V2.
 
 ---
 

@@ -1,0 +1,15 @@
+{
+  "source_summary": "runs/E005_20260927_063839_565f514e/e005_summary.json",
+  "output_dir": "outputs/e006_serving_economics",
+  "assumptions": {
+    "currency": "USD",
+    "gpu_price_per_hour": 0.19,
+    "gpu_count": 1,
+    "billing_increment_seconds": 1.0,
+    "idle_time_included": true,
+    "actual_session_cost": 0.5,
+    "actual_session_cost_is_approximate": true
+  },
+  "experiment_id": "E006",
+  "measurement_scope": "Per-point measured wall time, including arrival gaps and backlog drain; excluding warm-up, instance setup, model download/loading, time between load points, result packaging, and other session overhead."
+}

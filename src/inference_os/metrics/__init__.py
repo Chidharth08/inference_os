@@ -1,6 +1,12 @@
 """Metrics computation and measurement data structures."""
 
 from inference_os.metrics.buckets import summarize_length_buckets
+from inference_os.metrics.economics import (
+    CostAssumptions,
+    CostMetrics,
+    EconomicsConfig,
+    compute_cost_metrics,
+)
 from inference_os.metrics.request import RequestMeasurement
 from inference_os.metrics.slo import SLOSummary, evaluate_slo, request_meets_slo
 from inference_os.metrics.summary import (
@@ -20,4 +26,8 @@ __all__ = [
     "SLOSummary",
     "evaluate_slo",
     "request_meets_slo",
+    "CostAssumptions",
+    "CostMetrics",
+    "EconomicsConfig",
+    "compute_cost_metrics",
 ]

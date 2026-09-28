@@ -1123,3 +1123,94 @@ def generate_e005_plots(
     plt.close(fig)
     generated.append(pressure_path)
     return generated
+
+
+def generate_e006_plots(
+    economics_points: Sequence[dict[str, Any]],
+    output_dir: Path | str,
+    *,
+    currency: str,
+) -> list[Path]:
+    """Generate request, token, and cost-quality plots for E006."""
+    out_path = Path(output_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    points = sorted(economics_points, key=lambda point: float(point["offered_rate"]))
+    if not points:
+        return []
+
+    rates = [float(point["offered_rate"]) for point in points]
+    metrics = [point["cost_metrics"] for point in points]
+    generated: list[Path] = []
+
+    request_path = out_path / "cost_per_1000_requests_vs_offered_rate.png"
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(
+        rates,
+        [float(item["cost_per_1000_completed_requests"]) for item in metrics],
+        "o-",
+        label="Completed requests",
+    )
+    ax.plot(
+        rates,
+        [float(item["cost_per_1000_slo_compliant_requests"]) for item in metrics],
+        "s--",
+        label="Individually SLO-compliant requests",
+    )
+    ax.set_title("E006: Estimated Request Cost", fontweight="bold")
+    ax.set_xlabel("Offered rate (requests/s)")
+    ax.set_ylabel(f"{currency} per 1,000 requests")
+    ax.grid(True, linestyle="--", alpha=0.5)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(request_path, dpi=200)
+    plt.close(fig)
+    generated.append(request_path)
+
+    token_path = out_path / "cost_per_million_tokens_vs_offered_rate.png"
+    fig, ax = plt.subplots(figsize=(8, 5))
+    for key, label, style in (
+        ("cost_per_million_input_tokens", "Input tokens", "o-"),
+        ("cost_per_million_output_tokens", "Output tokens", "s--"),
+        ("cost_per_million_total_tokens", "Total tokens", "^:"),
+    ):
+        ax.plot(rates, [float(item[key]) for item in metrics], style, label=label)
+    ax.set_title("E006: Estimated Token Cost", fontweight="bold")
+    ax.set_xlabel("Offered rate (requests/s)")
+    ax.set_ylabel(f"{currency} per one million tokens")
+    ax.grid(True, linestyle="--", alpha=0.5)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(token_path, dpi=200)
+    plt.close(fig)
+    generated.append(token_path)
+
+    tradeoff_path = out_path / "cost_quality_tradeoff.png"
+    fig, left = plt.subplots(figsize=(8, 5))
+    right = left.twinx()
+    left.plot(
+        rates,
+        [float(item["cost_per_1000_completed_requests"]) for item in metrics],
+        "o-",
+        color="#1f77b4",
+        label="Cost / 1,000 completed",
+    )
+    right.plot(
+        rates,
+        [float(point["slo_compliance_rate"]) * 100.0 for point in points],
+        "s--",
+        color="#d62728",
+        label="Individual SLO compliance",
+    )
+    left.set_title("E006: Cost and Service-Quality Trade-off", fontweight="bold")
+    left.set_xlabel("Offered rate (requests/s)")
+    left.set_ylabel(f"{currency} per 1,000 completed requests", color="#1f77b4")
+    right.set_ylabel("Individually compliant requests (%)", color="#d62728")
+    right.set_ylim(0, 105)
+    left.grid(True, linestyle="--", alpha=0.5)
+    lines = left.get_lines() + right.get_lines()
+    left.legend(lines, [line.get_label() for line in lines], loc="best")
+    fig.tight_layout()
+    fig.savefig(tradeoff_path, dpi=200)
+    plt.close(fig)
+    generated.append(tradeoff_path)
+    return generated
