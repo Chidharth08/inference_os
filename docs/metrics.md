@@ -132,3 +132,47 @@ the warm-up and measured benchmark phases execute.
 `nvidia-smi` utilization is a coarse activity signal. It does not directly
 measure tensor-core efficiency, memory-bandwidth saturation, useful FLOPs, or
 end-to-end serving capacity.
+
+## E007 Prefix-Cache Metrics
+
+E007 captures raw vLLM Prometheus snapshots immediately after disjoint warm-up
+and immediately after the measured request window. Counter metrics are reported
+as non-negative differences between those snapshots.
+
+### Prefix-Cache Query Tokens
+
+The number of prompt tokens queried against the prefix cache during the measured
+window. This metric is derived from the vLLM prefix-cache query counter for the
+pinned server version.
+
+### Prefix-Cache Hit Tokens
+
+The number of queried prompt tokens found in the prefix cache during the
+measured window.
+
+### Observed Prefix-Cache Hit Fraction
+
+```text
+measured-window prefix-cache hit tokens
+/ measured-window prefix-cache query tokens
+```
+
+The fraction is undefined when the query-token delta is zero or unavailable.
+It is token weighted, not a percentage of requests that had at least one hit.
+
+### Configured and Actual Reusable Prefix
+
+`configured_shared_prefix_tokens` is the intended common-prefix length from the
+workload configuration. `actual_reusable_prefix_tokens` is the exact common
+token prefix between the current request and a previously scheduled measured
+request.
+
+Neither field proves that vLLM reused those tokens. Observed server hit counters
+provide that evidence.
+
+### Input Throughput Under Prefix Caching
+
+Existing input-token throughput counts tokenizer-observed tokens submitted by
+the client. It is effective workload throughput and does not claim that every
+submitted prompt token was physically recomputed. Cache-hit and cached-prompt
+metrics must be reported separately.

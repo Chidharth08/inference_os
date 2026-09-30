@@ -151,13 +151,40 @@ class TokenLengthDistribution:
 
 @dataclass(frozen=True, slots=True)
 class PromptReuseConfig:
-    """Prompt-reuse metadata reserved for a future caching experiment."""
+    """Configuration for deterministic prompt identity and prefix reuse."""
 
     mode: str = "none"
+    shared_prefix_tokens: int = 0
+    reuse_group_id: str = "prefix-1"
+    cache_block_size_tokens: int = 16
 
     def __post_init__(self) -> None:
-        if self.mode != "none":
-            raise ValueError("only prompt_reuse mode 'none' is supported in V2")
+        valid_modes = {"none", "unique_prefix", "shared_prefix"}
+        if self.mode not in valid_modes:
+            raise ValueError(f"prompt_reuse mode must be one of {sorted(valid_modes)}")
+        if (
+            isinstance(self.shared_prefix_tokens, bool)
+            or not isinstance(self.shared_prefix_tokens, int)
+            or self.shared_prefix_tokens < 0
+        ):
+            raise ValueError("shared_prefix_tokens must be a non-negative integer")
+        if (
+            isinstance(self.cache_block_size_tokens, bool)
+            or not isinstance(self.cache_block_size_tokens, int)
+            or self.cache_block_size_tokens <= 0
+        ):
+            raise ValueError("cache_block_size_tokens must be a positive integer")
+        if self.mode == "shared_prefix":
+            if self.shared_prefix_tokens <= 0:
+                raise ValueError(
+                    "shared_prefix mode requires positive shared_prefix_tokens"
+                )
+            if not self.reuse_group_id.strip():
+                raise ValueError("shared_prefix mode requires a reuse_group_id")
+        elif self.shared_prefix_tokens != 0:
+            raise ValueError(
+                "shared_prefix_tokens is only valid for shared_prefix mode"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -193,7 +220,14 @@ class WorkloadConfig:
             input_tokens=TokenLengthDistribution.from_dict(input_data),
             max_output_tokens=TokenLengthDistribution.from_dict(output_data),
             prompt_reuse=PromptReuseConfig(
-                mode=str(prompt_reuse_data.get("mode", "none"))
+                mode=str(prompt_reuse_data.get("mode", "none")),
+                shared_prefix_tokens=int(
+                    prompt_reuse_data.get("shared_prefix_tokens", 0)
+                ),
+                reuse_group_id=str(prompt_reuse_data.get("reuse_group_id", "prefix-1")),
+                cache_block_size_tokens=int(
+                    prompt_reuse_data.get("cache_block_size_tokens", 16)
+                ),
             ),
             sampling_mode=str(data.get("sampling_mode", "iid")),
         )

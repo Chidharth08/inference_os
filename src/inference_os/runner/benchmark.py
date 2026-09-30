@@ -23,6 +23,7 @@ RequestFactory = Callable[
     [str, int, bool],
     Awaitable[tuple[AsyncIterable[Any], int, Optional[int | Callable[[], int]]]],
 ]
+AsyncHook = Callable[[], Awaitable[None]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,6 +42,7 @@ async def run_benchmark(
     concurrency: int = 1,
     warmup_requests: int = 0,
     clock_fn: ClockFn = time.perf_counter_ns,
+    after_warmup_hook: Optional[AsyncHook] = None,
 ) -> BenchmarkResult:
     """Execute a benchmark with closed-loop client concurrency.
 
@@ -56,6 +58,8 @@ async def run_benchmark(
         concurrency: Maximum number of concurrent in-flight requests (must be > 0).
         warmup_requests: Number of warm-up requests to run prior to measurement (>= 0).
         clock_fn: Monotonic nanosecond clock function.
+        after_warmup_hook: Optional async callback invoked after warm-up and
+            immediately before the measured timing window.
 
     Returns:
         BenchmarkResult containing raw warmup/measured records and aggregate summary.
@@ -97,6 +101,9 @@ async def run_benchmark(
         if warmup_requests > 0
         else None
     )
+
+    if after_warmup_hook is not None:
+        await after_warmup_hook()
 
     # Phase 2: Benchmark Measured Requests (Closed-loop concurrency)
     queue: asyncio.Queue[tuple[str, int]] = asyncio.Queue()
@@ -166,6 +173,7 @@ async def run_sequential_benchmark(
     num_requests: int,
     warmup_requests: int = 0,
     clock_fn: ClockFn = time.perf_counter_ns,
+    after_warmup_hook: Optional[AsyncHook] = None,
 ) -> BenchmarkResult:
     """Execute a sequential benchmark at concurrency 1 (backwards-compatible wrapper).
 
@@ -185,4 +193,5 @@ async def run_sequential_benchmark(
         concurrency=1,
         warmup_requests=warmup_requests,
         clock_fn=clock_fn,
+        after_warmup_hook=after_warmup_hook,
     )

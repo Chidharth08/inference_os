@@ -3,6 +3,11 @@
 from typing import TYPE_CHECKING, Any
 
 from inference_os.workloads.base import Tokenizer
+from inference_os.workloads.prefix import (
+    PreparedPrompt,
+    common_prefix_length,
+    prepare_reuse_prompt_plan,
+)
 from inference_os.workloads.spec import (
     PromptReuseConfig,
     RequestSpec,
@@ -29,9 +34,12 @@ __all__ = [
     "Tokenizer",
     "HFTokenizer",
     "PromptReuseConfig",
+    "PreparedPrompt",
     "RequestSpec",
     "TokenLengthDistribution",
     "WorkloadConfig",
     "generate_request_specs",
     "generate_synthetic_prompt",
+    "common_prefix_length",
+    "prepare_reuse_prompt_plan",
 ]

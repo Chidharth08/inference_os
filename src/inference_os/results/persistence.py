@@ -29,6 +29,8 @@ def save_benchmark_run(
     run_id: Optional[str] = None,
     warmup_workload_specs: Optional[Sequence[RequestSpec]] = None,
     workload_specs: Optional[Sequence[RequestSpec]] = None,
+    warmup_workload_metadata: Optional[Sequence[dict[str, Any]]] = None,
+    workload_metadata: Optional[Sequence[dict[str, Any]]] = None,
     extra_config: Optional[dict[str, Any]] = None,
     extra_summary: Optional[dict[str, Any]] = None,
     in_flight_samples: Optional[Sequence[Any]] = None,
@@ -76,6 +78,16 @@ def save_benchmark_run(
         raise ValueError("warmup workload plan does not match warmup measurements")
     if len(measured_specs) != len(result.measured_requests):
         raise ValueError("workload plan does not match measured requests")
+    warmup_metadata = _validate_workload_metadata(
+        warmup_workload_metadata,
+        len(result.warmup_measurements),
+        "warmup workload metadata",
+    )
+    measured_metadata = _validate_workload_metadata(
+        workload_metadata,
+        len(result.measured_requests),
+        "measured workload metadata",
+    )
 
     # 1. Write config.json
     config_path = run_dir / "config.json"
@@ -109,13 +121,23 @@ def save_benchmark_run(
     # 4. Write the exact realized request plan.
     workload_path = run_dir / "workload.jsonl"
     with open(workload_path, "w", encoding="utf-8") as f:
-        for measurement, spec in zip(result.warmup_measurements, warmup_specs):
+        for measurement, spec, metadata in zip(
+            result.warmup_measurements, warmup_specs, warmup_metadata
+        ):
             f.write(
-                json.dumps(_workload_record(measurement.request_id, True, spec)) + "\n"
+                json.dumps(
+                    _workload_record(measurement.request_id, True, spec, metadata)
+                )
+                + "\n"
             )
-        for measurement, spec in zip(result.measured_requests, measured_specs):
+        for measurement, spec, metadata in zip(
+            result.measured_requests, measured_specs, measured_metadata
+        ):
             f.write(
-                json.dumps(_workload_record(measurement.request_id, False, spec)) + "\n"
+                json.dumps(
+                    _workload_record(measurement.request_id, False, spec, metadata)
+                )
+                + "\n"
             )
 
     # 5. Write requests.jsonl
@@ -216,13 +238,35 @@ def _workload_record(
     request_id: str,
     is_warmup: bool,
     spec: RequestSpec,
+    metadata: dict[str, Any],
 ) -> dict[str, Any]:
-    return {
+    record = {
         "request_id": request_id,
         "is_warmup": is_warmup,
         "target_input_tokens": spec.target_input_tokens,
         "max_output_tokens": spec.max_output_tokens,
     }
+    overlap = set(record).intersection(metadata)
+    if overlap:
+        raise ValueError(
+            "workload metadata cannot replace core fields: "
+            + ", ".join(sorted(overlap))
+        )
+    record.update(metadata)
+    return record
+
+
+def _validate_workload_metadata(
+    metadata: Optional[Sequence[dict[str, Any]]],
+    expected_count: int,
+    label: str,
+) -> list[dict[str, Any]]:
+    if metadata is None:
+        return [{} for _ in range(expected_count)]
+    values = [dict(item) for item in metadata]
+    if len(values) != expected_count:
+        raise ValueError(f"{label} does not match measurements")
+    return values
 
 
 def _summarize_workload(

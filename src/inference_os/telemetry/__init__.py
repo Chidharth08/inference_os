@@ -19,6 +19,17 @@ from inference_os.telemetry.gpu import (
     parse_gpu_sample_output,
     query_gpu_sample,
 )
+from inference_os.telemetry.vllm_metrics import (
+    PrefixCacheMetricsDelta,
+    VLLMCacheConfig,
+    VLLMMetricsSnapshot,
+    compute_prefix_cache_delta,
+    fetch_vllm_metrics,
+    parse_prometheus_text,
+    persist_cache_metric_artifacts,
+    validate_cache_server_config,
+    validate_pristine_cache_state,
+)
 
 __all__ = [
     "GitMetadata",
@@ -36,4 +47,13 @@ __all__ = [
     "query_gpu_sample",
     "compute_gpu_summary",
     "GPUTelemetrySampler",
+    "PrefixCacheMetricsDelta",
+    "VLLMCacheConfig",
+    "VLLMMetricsSnapshot",
+    "compute_prefix_cache_delta",
+    "fetch_vllm_metrics",
+    "parse_prometheus_text",
+    "persist_cache_metric_artifacts",
+    "validate_pristine_cache_state",
+    "validate_cache_server_config",
 ]

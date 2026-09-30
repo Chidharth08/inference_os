@@ -1214,3 +1214,89 @@ def generate_e006_plots(
     plt.close(fig)
     generated.append(tradeoff_path)
     return generated
+
+
+def generate_e007_plots(
+    conditions: Sequence[dict[str, Any]],
+    output_dir: Path | str,
+) -> list[Path]:
+    """Generate latency and observed-cache comparisons for E007."""
+    out_path = Path(output_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    if not conditions:
+        return []
+
+    ordered_keys = (
+        "unique_prefix_cache_off",
+        "unique_prefix_cache_on",
+        "shared_prefix_cache_off",
+        "shared_prefix_cache_on",
+    )
+    by_key = {str(item["condition"]): item for item in conditions}
+    ordered = [by_key[key] for key in ordered_keys if key in by_key]
+    labels = [
+        str(item["condition"]).replace("_prefix", "").replace("_cache_", "\ncache ")
+        for item in ordered
+    ]
+    generated: list[Path] = []
+
+    latency_path = out_path / "latency_by_condition.png"
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+    for ax, metric, title, scale, unit in (
+        (axes[0], "ttft_stats", "Time to First Token", 1000.0, "ms"),
+        (axes[1], "e2e_latency_stats", "End-to-End Latency", 1000.0, "ms"),
+        (axes[2], "tpot_stats", "Time per Output Token", 1000.0, "ms/token"),
+    ):
+        p50 = [
+            float((item["benchmark"].get(metric) or {}).get("p50", 0.0)) * scale
+            for item in ordered
+        ]
+        p95 = [
+            float((item["benchmark"].get(metric) or {}).get("p95", 0.0)) * scale
+            for item in ordered
+        ]
+        positions = list(range(len(ordered)))
+        width = 0.36
+        ax.bar(
+            [position - width / 2 for position in positions], p50, width, label="P50"
+        )
+        ax.bar(
+            [position + width / 2 for position in positions], p95, width, label="P95"
+        )
+        ax.set_title(title, fontweight="bold")
+        ax.set_ylabel(unit)
+        ax.set_xticks(positions, labels)
+        ax.grid(axis="y", linestyle="--", alpha=0.5)
+        ax.legend()
+    fig.suptitle("E007: Prefix-Caching Mechanism Validation", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(latency_path, dpi=200)
+    plt.close(fig)
+    generated.append(latency_path)
+
+    cache_path = out_path / "cache_observations_by_condition.png"
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    hit_fractions = [
+        float(item.get("cache", {}).get("observed_prefix_cache_hit_fraction") or 0.0)
+        * 100.0
+        for item in ordered
+    ]
+    hit_tokens = [
+        float(item.get("cache", {}).get("prefix_cache_hit_tokens") or 0.0)
+        for item in ordered
+    ]
+    axes[0].bar(labels, hit_fractions)
+    axes[0].set_title("Observed Prefix-Cache Hit Fraction", fontweight="bold")
+    axes[0].set_ylabel("queried prompt tokens hit (%)")
+    axes[0].set_ylim(0, 105)
+    axes[0].grid(axis="y", linestyle="--", alpha=0.5)
+    axes[1].bar(labels, hit_tokens)
+    axes[1].set_title("Prefix-Cache Hit Tokens", fontweight="bold")
+    axes[1].set_ylabel("tokens")
+    axes[1].grid(axis="y", linestyle="--", alpha=0.5)
+    fig.suptitle("E007: Verified Cache Activity", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(cache_path, dpi=200)
+    plt.close(fig)
+    generated.append(cache_path)
+    return generated

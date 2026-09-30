@@ -1,7 +1,7 @@
 """High-level orchestration engine for end-to-end benchmark execution."""
 
 from pathlib import Path
-from typing import AsyncGenerator, Callable, Optional
+from typing import AsyncGenerator, Awaitable, Callable, Optional
 
 import httpx
 
@@ -15,6 +15,7 @@ from inference_os.runner.benchmark import (
 from inference_os.telemetry.environment import capture_environment
 from inference_os.telemetry.gpu import GPUTelemetrySampler, GPUTelemetrySummary
 from inference_os.workloads.base import Tokenizer
+from inference_os.workloads.prefix import prepare_reuse_prompt_plan
 from inference_os.workloads.spec import (
     TokenLengthDistribution,
     generate_request_specs,
@@ -26,6 +27,7 @@ async def execute_benchmark(
     config: BenchmarkConfig,
     tokenizer: Optional[Tokenizer] = None,
     client: Optional[httpx.AsyncClient] = None,
+    after_warmup_hook: Optional[Callable[[], Awaitable[None]]] = None,
 ) -> tuple[Path, BenchmarkResult, Optional[GPUTelemetrySummary]]:
     """Execute a complete end-to-end benchmark run and persist results to disk.
 
@@ -93,9 +95,30 @@ async def execute_benchmark(
         warmup_specs = all_specs[: config.warmup_requests]
         measured_specs = all_specs[config.warmup_requests :]
 
+    warmup_workload_metadata: list[dict[str, object]] | None = None
+    workload_metadata: list[dict[str, object]] | None = None
+
     # Keep legacy fixed-size runs behaviorally identical: V1 reuses one prompt.
     # Named V2 profiles use distinct, deterministic content for every request.
-    if config.workload is None:
+    if config.workload is not None and config.workload.prompt_reuse.mode in {
+        "unique_prefix",
+        "shared_prefix",
+    }:
+        warmup_plan, measured_plan = prepare_reuse_prompt_plan(
+            tokenizer,
+            warmup_specs=warmup_specs,
+            measured_specs=measured_specs,
+            prompt_reuse=config.workload.prompt_reuse,
+            seed=config.seed,
+            prefix_caching_enabled=config.enable_prefix_caching,
+        )
+        prompts = [
+            *(prepared.text for prepared in warmup_plan),
+            *(prepared.text for prepared in measured_plan),
+        ]
+        warmup_workload_metadata = [item.metadata() for item in warmup_plan]
+        workload_metadata = [item.metadata() for item in measured_plan]
+    elif config.workload is None:
         fixed_prompt = generate_synthetic_prompt(
             tokenizer=tokenizer,
             num_tokens=config.prompt_tokens,
@@ -158,6 +181,7 @@ async def execute_benchmark(
             num_requests=config.num_requests,
             concurrency=config.concurrency,
             warmup_requests=config.warmup_requests,
+            after_warmup_hook=after_warmup_hook,
         )
 
     gpu_summary = sampler.get_summary()
@@ -175,6 +199,8 @@ async def execute_benchmark(
         gpu_samples=gpu_samples,
         warmup_workload_specs=warmup_specs,
         workload_specs=measured_specs,
+        warmup_workload_metadata=warmup_workload_metadata,
+        workload_metadata=workload_metadata,
     )
 
     return run_dir, result, gpu_summary
