@@ -5,6 +5,12 @@ E007 asks:
 > Does verified prefix reuse reduce prefill latency, and can the benchmark
 > distinguish a real cache hit from merely enabling prefix caching?
 
+**Status: complete.** The canonical RTX 3090 run passed every mechanism check.
+With unique prefixes, cache enablement produced zero hits and a +0.6% TTFT P50
+change. With a 3,072-token shared prefix, the observed hit fraction was 72.5%
+and TTFT P50 fell by 68.4%. See
+`outputs/e007_prefix_caching_baseline/e007_report.md` for the complete analysis.
+
 It is a 2×2 controlled experiment:
 
 | Prompt pattern | Cache OFF | Cache ON |

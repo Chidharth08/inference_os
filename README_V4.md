@@ -958,17 +958,21 @@ metric deltas can be validated offline.
 
 The current V4 milestone is:
 
-## V4.1 — E007 GPU Pilot Pending
+## V4.2 — E008 Reuse Sensitivity Next
 
-V1 and V2 are complete. The V4.0 prefix-reuse foundation and the local E007
-implementation are complete. E007 now has deterministic token-verified prompt
-plans, disjoint model warm-up, server-configuration checks, measured-window
-cache-counter deltas, four condition configurations, comparison plots, and
-offline tests.
+V1, V2, and the E007 mechanism-validation milestone are complete. E007 ran all
+four pilot and canonical conditions on an RTX 3090 with vLLM 0.30.0. All 120
+canonical requests succeeded and every mechanism check passed.
 
-No E007 performance result is claimed yet. The next task is to run the four
-pilot conditions on an isolated target GPU, verify the live vLLM metric semantics
-and cache behavior, and only then proceed to canonical E007 measurements.
+For unique 4,096-token prompts, enabling prefix caching produced zero hit tokens
+and changed TTFT P50 by only +0.6%. For prompts with a 3,072-token shared prefix,
+caching produced the exact expected 72.5% measured-window hit fraction and
+reduced TTFT P50 from 872.51 ms to 275.57 ms (-68.4%). TPOT remained stable,
+consistent with caching reducing prefill rather than decode work.
+
+The raw runs, machine-readable comparison, plots, and validation report are
+preserved in `runs/` and `outputs/e007_prefix_caching_baseline/`. The next task
+is E008: sweep reusable-prefix fraction while holding total prompt length fixed.
 
 ---
 

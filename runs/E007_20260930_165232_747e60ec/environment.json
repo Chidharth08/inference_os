@@ -1,0 +1,27 @@
+{
+  "timestamp_utc": "2026-09-30T16:52:32.117505+00:00",
+  "hostname": "177f7ed4dc0e",
+  "os_name": "Linux",
+  "os_release": "6.8.0-124-generic",
+  "python_version": "3.12.14",
+  "git": {
+    "commit_hash": "2f39dc97df828372721a7d9062f2791e0f4e32c6",
+    "branch": "main",
+    "is_dirty": true
+  },
+  "gpu": {
+    "name": "NVIDIA GeForce RTX 3090",
+    "driver_version": "595.71.05",
+    "cuda_version": null,
+    "total_memory_mb": 24576,
+    "count": 1
+  },
+  "packages": {
+    "inference-os": "0.1.0",
+    "httpx": "0.28.1",
+    "transformers": "5.17.0",
+    "tokenizers": "0.23.2",
+    "torch": "2.13.0+cu132",
+    "vllm": "0.30.0"
+  }
+}
