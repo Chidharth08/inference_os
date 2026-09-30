@@ -39,6 +39,14 @@ class PreparedPrompt:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class _PromptMaterial:
+    """Original text and the exact token sequence it produces."""
+
+    text: str
+    token_ids: tuple[int, ...]
+
+
 def common_prefix_length(left: Sequence[int], right: Sequence[int]) -> int:
     """Return the exact common-prefix length of two token sequences."""
     count = 0
@@ -67,7 +75,7 @@ def prepare_reuse_prompt_plan(
         raise ValueError("reuse prompt plans require an explicit V4 reuse mode")
 
     block_size = prompt_reuse.cache_block_size_tokens
-    measured_tokens: list[tuple[int, ...]] = []
+    measured_materials: list[_PromptMaterial] = []
     if prompt_reuse.mode == "shared_prefix":
         minimum_length = min(
             (spec.target_input_tokens for spec in measured_specs), default=0
@@ -83,18 +91,17 @@ def prepare_reuse_prompt_plan(
         if len(shared_ids) != prompt_reuse.shared_prefix_tokens:
             raise ValueError("shared-prefix tokenization did not match its target")
         for index, spec in enumerate(measured_specs):
-            suffix_length = spec.target_input_tokens - len(shared_ids)
-            suffix_text = generate_synthetic_prompt(
-                tokenizer,
-                suffix_length,
-                seed=seed + 20_000 + index,
-            )
-            suffix_ids = tuple(tokenizer.encode(suffix_text))
-            measured_tokens.append(
-                _roundtrip_exact(tokenizer, (*shared_ids, *suffix_ids))
+            measured_materials.append(
+                _compose_shared_prompt(
+                    tokenizer,
+                    prefix_text=prefix_text,
+                    shared_ids=shared_ids,
+                    total_tokens=spec.target_input_tokens,
+                    suffix_seed=seed + 20_000 + index,
+                )
             )
     else:
-        measured_tokens = _generate_block_distinct_sequences(
+        measured_materials = _generate_block_distinct_prompts(
             tokenizer,
             [spec.target_input_tokens for spec in measured_specs],
             seed=seed + 20_000,
@@ -102,29 +109,29 @@ def prepare_reuse_prompt_plan(
             forbidden=(),
         )
 
-    warmup_tokens = _generate_block_distinct_sequences(
+    warmup_materials = _generate_block_distinct_prompts(
         tokenizer,
         [spec.target_input_tokens for spec in warmup_specs],
         seed=seed + 30_000,
         block_size=block_size,
-        forbidden=measured_tokens,
+        forbidden=[item.token_ids for item in measured_materials],
     )
     warmups = [
         _prepared(
-            tokenizer,
-            token_ids,
+            material,
             mode="unique_prefix",
             group_id=None,
             configured_shared=0,
             reusable=0,
             expected_state="disjoint_warmup",
         )
-        for token_ids in warmup_tokens
+        for material in warmup_materials
     ]
 
     measured: list[PreparedPrompt] = []
     prior: list[tuple[int, ...]] = []
-    for token_ids in measured_tokens:
+    for material in measured_materials:
+        token_ids = material.token_ids
         reusable = max(
             (common_prefix_length(token_ids, previous) for previous in prior),
             default=0,
@@ -146,8 +153,7 @@ def prepare_reuse_prompt_plan(
             state = "no_cacheable_prefix"
         measured.append(
             _prepared(
-                tokenizer,
-                token_ids,
+                material,
                 mode=prompt_reuse.mode,
                 group_id=(
                     prompt_reuse.reuse_group_id
@@ -163,15 +169,51 @@ def prepare_reuse_prompt_plan(
     return warmups, measured
 
 
-def _generate_block_distinct_sequences(
+def _compose_shared_prompt(
+    tokenizer: Tokenizer,
+    *,
+    prefix_text: str,
+    shared_ids: tuple[int, ...],
+    total_tokens: int,
+    suffix_seed: int,
+) -> _PromptMaterial:
+    """Compose text whose final tokenization preserves an exact shared prefix.
+
+    Token IDs from independently encoded fragments cannot safely be concatenated
+    and decoded with every BPE tokenizer. Instead, compose text at a stable
+    boundary, tokenize the final string, and adjust the suffix length until the
+    complete prompt has the requested size.
+    """
+    for separator in ("\n\n", "\n", " "):
+        suffix_length = total_tokens - len(shared_ids)
+        for _ in range(32):
+            if suffix_length <= 0:
+                break
+            suffix_text = generate_synthetic_prompt(
+                tokenizer,
+                suffix_length,
+                seed=suffix_seed,
+            )
+            text = f"{prefix_text}{separator}{suffix_text}"
+            token_ids = tuple(tokenizer.encode(text))
+            prefix_length = common_prefix_length(token_ids, shared_ids)
+            if len(token_ids) == total_tokens and prefix_length >= len(shared_ids):
+                return _PromptMaterial(text=text, token_ids=token_ids)
+            suffix_length += total_tokens - len(token_ids)
+    raise ValueError(
+        "could not compose an exact-length prompt while preserving the shared prefix"
+    )
+
+
+def _generate_block_distinct_prompts(
     tokenizer: Tokenizer,
     lengths: Sequence[int],
     *,
     seed: int,
     block_size: int,
     forbidden: Sequence[Sequence[int]],
-) -> list[tuple[int, ...]]:
-    generated: list[tuple[int, ...]] = []
+) -> list[_PromptMaterial]:
+    generated: list[_PromptMaterial] = []
     for index, length in enumerate(lengths):
         for attempt in range(1_000):
             text = generate_synthetic_prompt(
@@ -182,12 +224,12 @@ def _generate_block_distinct_sequences(
             token_ids = tuple(tokenizer.encode(text))
             if len(token_ids) != length:
                 continue
-            comparisons = [*forbidden, *generated]
+            comparisons = [*forbidden, *(item.token_ids for item in generated)]
             if all(
                 common_prefix_length(token_ids, previous) < block_size
                 for previous in comparisons
             ):
-                generated.append(token_ids)
+                generated.append(_PromptMaterial(text=text, token_ids=token_ids))
                 break
         else:
             raise ValueError(
@@ -196,20 +238,8 @@ def _generate_block_distinct_sequences(
     return generated
 
 
-def _roundtrip_exact(tokenizer: Tokenizer, token_ids: Sequence[int]) -> tuple[int, ...]:
-    expected = tuple(token_ids)
-    text = tokenizer.decode(list(expected))
-    actual = tuple(tokenizer.encode(text))
-    if actual != expected:
-        raise ValueError(
-            "tokenizer decode/encode round trip changed the planned prefix tokens"
-        )
-    return actual
-
-
 def _prepared(
-    tokenizer: Tokenizer,
-    token_ids: tuple[int, ...],
+    material: _PromptMaterial,
     *,
     mode: str,
     group_id: str | None,
@@ -217,9 +247,8 @@ def _prepared(
     reusable: int,
     expected_state: str,
 ) -> PreparedPrompt:
-    text = tokenizer.decode(list(token_ids))
-    if tuple(tokenizer.encode(text)) != token_ids:
-        raise ValueError("prepared prompt is not token-stable")
+    text = material.text
+    token_ids = material.token_ids
     reusable_ids = token_ids[:reusable]
     return PreparedPrompt(
         text=text,

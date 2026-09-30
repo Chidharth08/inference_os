@@ -46,6 +46,14 @@ class WordTokenizer:
         return len(self.encode(text))
 
 
+class NewlineTokenTokenizer(WordTokenizer):
+    """Tokenizer where the shared/suffix text boundary consumes one token."""
+
+    def encode(self, text: str) -> list[int]:
+        normalized = text.replace("\n\n", " <newline> ").replace("\n", " <newline> ")
+        return super().encode(normalized)
+
+
 def test_shared_prefix_plan_is_exact_and_warmup_is_disjoint() -> None:
     tokenizer = WordTokenizer()
     specs = [RequestSpec(64, 8) for _ in range(4)]
@@ -74,6 +82,25 @@ def test_shared_prefix_plan_is_exact_and_warmup_is_disjoint() -> None:
         for measured_item in measured
     )
     assert len({item.prompt_token_sha256 for item in measured}) == 4
+
+
+def test_shared_prefix_composition_adjusts_for_boundary_tokens() -> None:
+    tokenizer = NewlineTokenTokenizer()
+    _, measured = prepare_reuse_prompt_plan(
+        tokenizer,
+        warmup_specs=[],
+        measured_specs=[RequestSpec(64, 8) for _ in range(3)],
+        prompt_reuse=PromptReuseConfig(
+            mode="shared_prefix",
+            shared_prefix_tokens=48,
+            cache_block_size_tokens=8,
+        ),
+        seed=42,
+        prefix_caching_enabled=True,
+    )
+
+    assert all(len(item.token_ids) == 64 for item in measured)
+    assert all(item.actual_reusable_prefix_tokens >= 48 for item in measured[1:])
 
 
 def test_unique_prefix_plan_never_shares_a_cacheable_block() -> None:
