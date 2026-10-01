@@ -958,7 +958,7 @@ metric deltas can be validated offline.
 
 The current V4 milestone is:
 
-## V4.2 — E008 Reuse Sensitivity Next
+## V4.2 — E008 GPU Pilot Pending
 
 V1, V2, and the E007 mechanism-validation milestone are complete. E007 ran all
 four pilot and canonical conditions on an RTX 3090 with vLLM 0.30.0. All 120
@@ -971,8 +971,14 @@ reduced TTFT P50 from 872.51 ms to 275.57 ms (-68.4%). TPOT remained stable,
 consistent with caching reducing prefill rather than decode work.
 
 The raw runs, machine-readable comparison, plots, and validation report are
-preserved in `runs/` and `outputs/e007_prefix_caching_baseline/`. The next task
-is E008: sweep reusable-prefix fraction while holding total prompt length fixed.
+preserved in `runs/` and `outputs/e007_prefix_caching_baseline/`.
+
+The local E008 implementation is complete. It defines five requested reusable
+fractions (0%, 25%, 50%, 75%, and 90%), resolves them to 16-token cache-block
+boundaries, pairs cache OFF and cache ON for ten isolated conditions, checks
+observed hit tokens against the realized request plan, and generates paired
+latency and cache-reuse plots. The next task is to run the E008 pilots on the
+target GPU before collecting canonical measurements.
 
 ---
 

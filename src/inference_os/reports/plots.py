@@ -1300,3 +1300,128 @@ def generate_e007_plots(
     plt.close(fig)
     generated.append(cache_path)
     return generated
+
+
+def generate_e008_plots(
+    points: Sequence[dict[str, Any]],
+    output_dir: Path | str,
+) -> list[Path]:
+    """Plot paired latency and verified reuse across the E008 fraction sweep."""
+    out_path = Path(output_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    ordered = sorted(
+        points, key=lambda point: float(point["requested_shared_fraction_percent"])
+    )
+    if not ordered:
+        return []
+
+    fractions = [
+        float(point["requested_shared_fraction_percent"]) for point in ordered
+    ]
+    generated: list[Path] = []
+
+    ttft_path = out_path / "ttft_vs_shared_fraction.png"
+    fig, ax = plt.subplots(figsize=(8, 5))
+    for cache_key, label, p50_style, p95_style in (
+        ("cache_off", "Cache OFF", "o-", "o--"),
+        ("cache_on", "Cache ON", "s-", "s--"),
+    ):
+        p50 = [
+            float(
+                (point[cache_key]["benchmark"].get("ttft_stats") or {}).get(
+                    "p50", 0.0
+                )
+            )
+            * 1000.0
+            for point in ordered
+        ]
+        p95 = [
+            float(
+                (point[cache_key]["benchmark"].get("ttft_stats") or {}).get(
+                    "p95", 0.0
+                )
+            )
+            * 1000.0
+            for point in ordered
+        ]
+        ax.plot(fractions, p50, p50_style, label=f"{label} P50")
+        ax.plot(fractions, p95, p95_style, alpha=0.7, label=f"{label} P95")
+    ax.set_title("E008: TTFT vs Reusable Prefix", fontweight="bold")
+    ax.set_xlabel("Requested shared-prefix fraction (%)")
+    ax.set_ylabel("TTFT (ms)")
+    ax.set_xticks(fractions)
+    ax.grid(True, linestyle="--", alpha=0.5)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(ttft_path, dpi=200)
+    plt.close(fig)
+    generated.append(ttft_path)
+
+    relationship_path = out_path / "reuse_vs_ttft_improvement.png"
+    fig, left = plt.subplots(figsize=(8, 5))
+    right = left.twinx()
+    observed = [
+        float(point.get("observed_cache_hit_fraction") or 0.0) * 100.0
+        for point in ordered
+    ]
+    steady = [
+        float(point.get("steady_state_observed_hit_fraction") or 0.0) * 100.0
+        for point in ordered
+    ]
+    improvement = [
+        -float(point.get("ttft_p50_change_percent") or 0.0) for point in ordered
+    ]
+    left.plot(fractions, observed, "o-", label="Measured-window hit fraction")
+    left.plot(fractions, steady, "s--", label="Steady-state hit fraction")
+    right.plot(
+        fractions,
+        improvement,
+        "^-",
+        color="#d62728",
+        label="TTFT P50 reduction",
+    )
+    left.set_title("E008: Observed Reuse and TTFT Benefit", fontweight="bold")
+    left.set_xlabel("Requested shared-prefix fraction (%)")
+    left.set_ylabel("Observed cache-hit fraction (%)")
+    right.set_ylabel("TTFT P50 reduction (%)", color="#d62728")
+    left.set_xticks(fractions)
+    left.grid(True, linestyle="--", alpha=0.5)
+    lines = left.get_lines() + right.get_lines()
+    left.legend(lines, [line.get_label() for line in lines], loc="best")
+    fig.tight_layout()
+    fig.savefig(relationship_path, dpi=200)
+    plt.close(fig)
+    generated.append(relationship_path)
+
+    latency_path = out_path / "e2e_tpot_vs_shared_fraction.png"
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    for ax, metric, title, unit in (
+        (axes[0], "e2e_latency_stats", "End-to-End Latency", "ms"),
+        (axes[1], "tpot_stats", "Time per Output Token", "ms/token"),
+    ):
+        for cache_key, label, style in (
+            ("cache_off", "Cache OFF P50", "o-"),
+            ("cache_on", "Cache ON P50", "s-"),
+        ):
+            values = [
+                float(
+                    (point[cache_key]["benchmark"].get(metric) or {}).get(
+                        "p50", 0.0
+                    )
+                )
+                * 1000.0
+                for point in ordered
+            ]
+            ax.plot(fractions, values, style, label=label)
+        ax.set_title(title, fontweight="bold")
+        ax.set_xlabel("Requested shared-prefix fraction (%)")
+        ax.set_ylabel(unit)
+        ax.set_xticks(fractions)
+        ax.grid(True, linestyle="--", alpha=0.5)
+        ax.legend()
+    fig.suptitle("E008: Latency Components", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(latency_path, dpi=200)
+    plt.close(fig)
+    generated.append(latency_path)
+    return generated
