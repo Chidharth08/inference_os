@@ -193,3 +193,15 @@ E009 does not measure retrieval quality, generated-answer quality, summary
 quality, tool correctness, agent success, or end-user task completion. It does
 not characterize cache eviction, multi-tenant pressure, distributed caching, or
 production traffic.
+
+## Published Results
+
+The canonical RTX 3090 collection is complete. All ten controlled and four
+open-loop conditions passed their execution and mechanism checks. The raw runs
+are preserved in `runs/E009_20261001_*`; derived comparisons and plots are in
+`runs/E009_controlled_20261001_173303_29917f34` and
+`runs/E009_load_20261001_173304_917d3f2c`.
+
+See `outputs/e009_application_prefix_reuse/e009_report.md` for the complete
+analysis, `e009_summary.json` for the controlled comparison, and
+`e009_load_summary.json` for the open-loop comparison.

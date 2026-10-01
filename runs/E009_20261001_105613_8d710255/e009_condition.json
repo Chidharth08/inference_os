@@ -1,0 +1,234 @@
+{
+  "experiment_id": "E009",
+  "stage": "controlled",
+  "condition": "rag_friendly_cache_on",
+  "profile": "rag_friendly",
+  "success": true,
+  "mechanism_valid": true,
+  "mechanism_checks": {
+    "request_plan_valid": true,
+    "server_config_verified": true,
+    "cache_queries_observed": true,
+    "cache_hits_observed": true,
+    "cache_hits_match_plan": true
+  },
+  "run_dir": "runs/E009_20261001_105613_8d710255",
+  "server_cache_config": {
+    "enable_prefix_caching": true,
+    "block_size": 16,
+    "cache_dtype": "auto",
+    "gpu_memory_utilization": 0.9,
+    "labels": {
+      "_block_size_resolved": "True",
+      "block_size": "16",
+      "cache_dtype": "auto",
+      "enable_mamba_fine_grained_prefix_cache": "False",
+      "enable_prefix_caching": "True",
+      "engine": "0",
+      "gpu_memory_utilization": "0.9",
+      "is_attention_free": "False",
+      "kv_cache_dtype_skip_layers": "[]",
+      "kv_cache_layout": "None",
+      "kv_cache_max_concurrency": "1.43359375",
+      "kv_cache_memory_bytes": "None",
+      "kv_cache_size_tokens": "46976",
+      "kv_offloading_backend": "native",
+      "kv_offloading_size": "None",
+      "kv_sharing_fast_prefill": "False",
+      "mamba_block_size": "None",
+      "mamba_cache_dtype": "auto",
+      "mamba_cache_mode": "none",
+      "mamba_page_size_padded": "None",
+      "mamba_ssm_cache_dtype": "auto",
+      "num_cpu_blocks": "None",
+      "num_gpu_blocks": "2936",
+      "num_gpu_blocks_override": "None",
+      "prefix_cache_retention_interval": "0",
+      "prefix_caching_hash_algo": "sha256",
+      "prefix_match_unit": "None",
+      "replayssm_buffer_len": "16",
+      "skip_page_size_padded": "None",
+      "sliding_window": "None",
+      "use_kda_recoverssm": "False",
+      "use_replayssm": "False",
+      "user_specified_block_size": "False",
+      "user_specified_mamba_block_size": "False"
+    }
+  },
+  "benchmark": {
+    "total_requests": 8,
+    "successful_requests": 8,
+    "failed_requests": 0,
+    "total_input_tokens": 32768,
+    "total_output_tokens": 512,
+    "total_duration_seconds": 15.495243326,
+    "request_throughput": 0.5162874716898782,
+    "output_token_throughput": 33.042398188152205,
+    "input_token_throughput": 2114.713484041741,
+    "total_token_throughput": 2147.7558822298934,
+    "error_rate": 0.0,
+    "ttft_stats": {
+      "count": 8,
+      "mean": 0.3873193565,
+      "std_dev": 0.2720083453901385,
+      "min": 0.265141589,
+      "max": 1.057495619,
+      "p50": 0.28709437800000004,
+      "p90": 0.5575045525999999,
+      "p95": 0.8075000857999997,
+      "p99": 1.0074965123599997
+    },
+    "e2e_latency_stats": {
+      "count": 8,
+      "mean": 1.935986615125,
+      "std_dev": 0.2661621938431054,
+      "min": 1.818605592,
+      "max": 2.593013264,
+      "p50": 1.843508698,
+      "p90": 2.0926137048999998,
+      "p95": 2.3428134844499997,
+      "p99": 2.54297330809
+    },
+    "tpot_stats": {
+      "count": 8,
+      "mean": 0.024582019978174604,
+      "std_dev": 0.00037952938371310445,
+      "min": 0.023903571682539683,
+      "max": 0.025074605031746033,
+      "p50": 0.024596553928571428,
+      "p90": 0.02497243667619048,
+      "p95": 0.025023520853968254,
+      "p99": 0.02506438819619048
+    },
+    "errors": null
+  },
+  "gpu": {
+    "sample_count": 147,
+    "peak_memory_used_mb": 18518,
+    "avg_memory_used_mb": 18513.020408163266,
+    "peak_utilization_gpu_pct": 100,
+    "avg_utilization_gpu_pct": 91.56462585034014,
+    "total_memory_mb": 24576
+  },
+  "cache": {
+    "prefix_cache_query_tokens": 32768.0,
+    "prefix_cache_hit_tokens": 23296.0,
+    "observed_prefix_cache_hit_fraction": 0.7109375,
+    "prompt_tokens": 32768.0,
+    "cached_prompt_tokens": 23296.0,
+    "preemptions": 0.0,
+    "kv_cache_usage_before": 0.0,
+    "kv_cache_usage_after": 0.0
+  },
+  "reuse_plan": {
+    "measured_requests": 8,
+    "expected_cache_hit_tokens": 23296,
+    "actual_reusable_prefix_tokens_min": 0,
+    "actual_reusable_prefix_tokens_max": 3330,
+    "cacheable_tokens_by_sequence_index": {
+      "1": 0.0,
+      "2": 3328.0,
+      "3": 3328.0,
+      "4": 3328.0,
+      "5": 3328.0,
+      "6": 3328.0,
+      "7": 3328.0,
+      "8": 3328.0
+    },
+    "relationship_ids": [
+      "rag-document-9818300b28a4"
+    ]
+  },
+  "cache_phase_latency": {
+    "cold": {
+      "count": 1,
+      "mean": 1.057495619,
+      "std_dev": 0.0,
+      "min": 1.057495619,
+      "max": 1.057495619,
+      "p50": 1.057495619,
+      "p90": 1.057495619,
+      "p95": 1.057495619,
+      "p99": 1.057495619
+    },
+    "warm": {
+      "count": 7,
+      "mean": 0.2915798904285714,
+      "std_dev": 0.027752595581920454,
+      "min": 0.265141589,
+      "max": 0.343222667,
+      "p50": 0.281170515,
+      "p90": 0.32489741240000003,
+      "p95": 0.3340600397,
+      "p99": 0.34139014153999997
+    }
+  },
+  "workload": {
+    "profile_name": "e009_rag_friendly_cache_on",
+    "seed": 42,
+    "sampling_mode": "sequence",
+    "request_count": 8,
+    "target_input_tokens": {
+      "count": 8,
+      "mean": 4096.0,
+      "std_dev": 0.0,
+      "min": 4096.0,
+      "max": 4096.0,
+      "p50": 4096.0,
+      "p90": 4096.0,
+      "p95": 4096.0,
+      "p99": 4096.0
+    },
+    "max_output_tokens": {
+      "count": 8,
+      "mean": 64.0,
+      "std_dev": 0.0,
+      "min": 64.0,
+      "max": 64.0,
+      "p50": 64.0,
+      "p90": 64.0,
+      "p95": 64.0,
+      "p99": 64.0
+    },
+    "configured_distributions": {
+      "target_input_tokens": {
+        "values": [
+          4096
+        ],
+        "weights": [
+          1.0
+        ],
+        "mean": 4096.0,
+        "std_dev": 0.0,
+        "coefficient_of_variation": 0.0
+      },
+      "max_output_tokens": {
+        "values": [
+          64
+        ],
+        "weights": [
+          1.0
+        ],
+        "mean": 64.0,
+        "std_dev": 0.0,
+        "coefficient_of_variation": 0.0
+      }
+    },
+    "sampling_error": {
+      "target_input_tokens": {
+        "configured_mean": 4096.0,
+        "realized_mean": 4096.0,
+        "mean_delta_tokens": 0.0,
+        "mean_delta_percent": 0.0
+      },
+      "max_output_tokens": {
+        "configured_mean": 64.0,
+        "realized_mean": 64.0,
+        "mean_delta_tokens": 0.0,
+        "mean_delta_percent": 0.0
+      }
+    }
+  },
+  "load": null,
+  "slo": null
+}

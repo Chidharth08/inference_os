@@ -958,7 +958,7 @@ metric deltas can be validated offline.
 
 The current V4 milestone is:
 
-## V4.3 — E009 GPU Pilot Pending
+## V4.3 — E009 Complete
 
 V1, V2, and the E007 mechanism-validation milestone are complete. E007 ran all
 four pilot and canonical conditions on an RTX 3090 with vLLM 0.30.0. All 120
@@ -983,13 +983,24 @@ at 0% reuse changed TTFT P50 by only +0.14%; positive reuse reduced TTFT P50 by
 The raw runs, comparison, plots, and report are preserved under `runs/` and
 `outputs/e008_prefix_reuse_sensitivity/`.
 
-The local E009 implementation is complete. It generates deterministic chat-like
-conversations, cache-friendly and cache-hostile RAG layouts with the same
-document content, summarization-like short-prefix controls, and agent-like
-growing trajectories. Ten controlled cache-OFF/cache-ON conditions validate
-exact cache-hit accounting. Four selected RAG conditions reuse the same plans
-under 1 request/s open-loop load with SLO goodput measurement. The next task is
-to run E009 pilots on the target GPU before canonical collection.
+E009 is complete. Its ten controlled conditions compared deterministic
+chat-like, cache-friendly and cache-hostile RAG, summarization-like, and
+agent-like request relationships with cache OFF and ON. All 240 controlled
+requests succeeded, every mechanism check passed, and every cache-ON hit total
+exactly matched the token-level plan. TTFT P50 fell by 69.29% for chat-like,
+74.31% for RAG-friendly, and 84.73% for agent-like traffic. RAG-hostile and
+summarization-like traffic exposed only a short reusable prefix and improved by
+4.64% and 4.48%.
+
+E009 also completed four 24-request open-loop conditions at 1 request/s with no
+errors, drops, or timeouts. Only RAG-friendly cache ON met the complete SLO,
+with TTFT P95 of 0.398 seconds, E2E P95 of 2.419 seconds, and 0.922 requests/s
+goodput. RAG-hostile cache ON missed the SLO with TTFT P95 of 2.988 seconds and
+E2E P95 of 14.297 seconds, demonstrating that reusable content must appear
+before changing content to provide substantial prefix-cache benefit.
+
+The raw runs, controlled and load comparisons, five plots, and report are
+preserved under `runs/` and `outputs/e009_application_prefix_reuse/`.
 
 ---
 

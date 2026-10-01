@@ -1,0 +1,234 @@
+{
+  "experiment_id": "E009",
+  "stage": "controlled",
+  "condition": "summarization_like_cache_on",
+  "profile": "summarization_like",
+  "success": true,
+  "mechanism_valid": true,
+  "mechanism_checks": {
+    "request_plan_valid": true,
+    "server_config_verified": true,
+    "cache_queries_observed": true,
+    "cache_hits_observed": true,
+    "cache_hits_match_plan": true
+  },
+  "run_dir": "runs/E009_20261001_110017_b2b1367a",
+  "server_cache_config": {
+    "enable_prefix_caching": true,
+    "block_size": 16,
+    "cache_dtype": "auto",
+    "gpu_memory_utilization": 0.9,
+    "labels": {
+      "_block_size_resolved": "True",
+      "block_size": "16",
+      "cache_dtype": "auto",
+      "enable_mamba_fine_grained_prefix_cache": "False",
+      "enable_prefix_caching": "True",
+      "engine": "0",
+      "gpu_memory_utilization": "0.9",
+      "is_attention_free": "False",
+      "kv_cache_dtype_skip_layers": "[]",
+      "kv_cache_layout": "None",
+      "kv_cache_max_concurrency": "1.43359375",
+      "kv_cache_memory_bytes": "None",
+      "kv_cache_size_tokens": "46976",
+      "kv_offloading_backend": "native",
+      "kv_offloading_size": "None",
+      "kv_sharing_fast_prefill": "False",
+      "mamba_block_size": "None",
+      "mamba_cache_dtype": "auto",
+      "mamba_cache_mode": "none",
+      "mamba_page_size_padded": "None",
+      "mamba_ssm_cache_dtype": "auto",
+      "num_cpu_blocks": "None",
+      "num_gpu_blocks": "2936",
+      "num_gpu_blocks_override": "None",
+      "prefix_cache_retention_interval": "0",
+      "prefix_caching_hash_algo": "sha256",
+      "prefix_match_unit": "None",
+      "replayssm_buffer_len": "16",
+      "skip_page_size_padded": "None",
+      "sliding_window": "None",
+      "use_kda_recoverssm": "False",
+      "use_replayssm": "False",
+      "user_specified_block_size": "False",
+      "user_specified_mamba_block_size": "False"
+    }
+  },
+  "benchmark": {
+    "total_requests": 8,
+    "successful_requests": 8,
+    "failed_requests": 0,
+    "total_input_tokens": 32768,
+    "total_output_tokens": 512,
+    "total_duration_seconds": 20.723089572,
+    "request_throughput": 0.38604282301656406,
+    "output_token_throughput": 24.7067406730601,
+    "input_token_throughput": 1581.2314030758464,
+    "total_token_throughput": 1605.9381437489064,
+    "error_rate": 0.0,
+    "ttft_stats": {
+      "count": 8,
+      "mean": 1.0082660460000001,
+      "std_dev": 0.012604008331997067,
+      "min": 0.99323151,
+      "max": 1.029079491,
+      "p50": 1.0072358085,
+      "p90": 1.024129196,
+      "p95": 1.0266043435,
+      "p99": 1.0285844615000002
+    },
+    "e2e_latency_stats": {
+      "count": 8,
+      "mean": 2.58947115925,
+      "std_dev": 0.01840927794282656,
+      "min": 2.559529976,
+      "max": 2.616752974,
+      "p50": 2.591575206,
+      "p90": 2.6078986166,
+      "p95": 2.6123257953,
+      "p99": 2.6158675382600003
+    },
+    "tpot_stats": {
+      "count": 8,
+      "mean": 0.025098493861111112,
+      "std_dev": 0.00028626604164405813,
+      "min": 0.024700951365079365,
+      "max": 0.025499333619047618,
+      "p50": 0.02509380036507937,
+      "p90": 0.025414695485714286,
+      "p95": 0.025457014552380954,
+      "p99": 0.025490869805714286
+    },
+    "errors": null
+  },
+  "gpu": {
+    "sample_count": 185,
+    "peak_memory_used_mb": 18518,
+    "avg_memory_used_mb": 18514.043243243243,
+    "peak_utilization_gpu_pct": 100,
+    "avg_utilization_gpu_pct": 95.54594594594595,
+    "total_memory_mb": 24576
+  },
+  "cache": {
+    "prefix_cache_query_tokens": 32768.0,
+    "prefix_cache_hit_tokens": 1792.0,
+    "observed_prefix_cache_hit_fraction": 0.0546875,
+    "prompt_tokens": 32768.0,
+    "cached_prompt_tokens": 1792.0,
+    "preemptions": 0.0,
+    "kv_cache_usage_before": 0.0,
+    "kv_cache_usage_after": 0.0
+  },
+  "reuse_plan": {
+    "measured_requests": 8,
+    "expected_cache_hit_tokens": 1792,
+    "actual_reusable_prefix_tokens_min": 0,
+    "actual_reusable_prefix_tokens_max": 258,
+    "cacheable_tokens_by_sequence_index": {
+      "1": 0.0,
+      "2": 256.0,
+      "3": 256.0,
+      "4": 256.0,
+      "5": 256.0,
+      "6": 256.0,
+      "7": 256.0,
+      "8": 256.0
+    },
+    "relationship_ids": [
+      "summarization-instruction"
+    ]
+  },
+  "cache_phase_latency": {
+    "cold": {
+      "count": 1,
+      "mean": 1.029079491,
+      "std_dev": 0.0,
+      "min": 1.029079491,
+      "max": 1.029079491,
+      "p50": 1.029079491,
+      "p90": 1.029079491,
+      "p95": 1.029079491,
+      "p99": 1.029079491
+    },
+    "warm": {
+      "count": 7,
+      "mean": 1.0052926967142857,
+      "std_dev": 0.010140200915492503,
+      "min": 0.99323151,
+      "max": 1.022007641,
+      "p50": 1.00337004,
+      "p90": 1.0158626228,
+      "p95": 1.0189351319,
+      "p99": 1.02139313918
+    }
+  },
+  "workload": {
+    "profile_name": "e009_summarization_like_cache_on",
+    "seed": 42,
+    "sampling_mode": "sequence",
+    "request_count": 8,
+    "target_input_tokens": {
+      "count": 8,
+      "mean": 4096.0,
+      "std_dev": 0.0,
+      "min": 4096.0,
+      "max": 4096.0,
+      "p50": 4096.0,
+      "p90": 4096.0,
+      "p95": 4096.0,
+      "p99": 4096.0
+    },
+    "max_output_tokens": {
+      "count": 8,
+      "mean": 64.0,
+      "std_dev": 0.0,
+      "min": 64.0,
+      "max": 64.0,
+      "p50": 64.0,
+      "p90": 64.0,
+      "p95": 64.0,
+      "p99": 64.0
+    },
+    "configured_distributions": {
+      "target_input_tokens": {
+        "values": [
+          4096
+        ],
+        "weights": [
+          1.0
+        ],
+        "mean": 4096.0,
+        "std_dev": 0.0,
+        "coefficient_of_variation": 0.0
+      },
+      "max_output_tokens": {
+        "values": [
+          64
+        ],
+        "weights": [
+          1.0
+        ],
+        "mean": 64.0,
+        "std_dev": 0.0,
+        "coefficient_of_variation": 0.0
+      }
+    },
+    "sampling_error": {
+      "target_input_tokens": {
+        "configured_mean": 4096.0,
+        "realized_mean": 4096.0,
+        "mean_delta_tokens": 0.0,
+        "mean_delta_percent": 0.0
+      },
+      "max_output_tokens": {
+        "configured_mean": 64.0,
+        "realized_mean": 64.0,
+        "mean_delta_tokens": 0.0,
+        "mean_delta_percent": 0.0
+      }
+    }
+  },
+  "load": null,
+  "slo": null
+}
