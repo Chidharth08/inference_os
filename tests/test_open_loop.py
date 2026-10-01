@@ -23,6 +23,36 @@ def test_open_loop_records_overload_instead_of_self_throttling() -> None:
     asyncio.run(_assert_open_loop_records_overload())
 
 
+def test_open_loop_invokes_after_warmup_hook_before_arrivals() -> None:
+    asyncio.run(_assert_open_loop_hook_order())
+
+
+async def _assert_open_loop_hook_order() -> None:
+    events: list[str] = []
+
+    async def request_factory(request_id: str, index: int, is_warmup: bool):
+        events.append("warmup" if is_warmup else "measured")
+
+        async def stream():
+            yield "token"
+
+        return stream(), 10, 1
+
+    async def hook() -> None:
+        events.append("hook")
+
+    await run_open_loop(
+        request_factory,
+        request_rate=1000.0,
+        duration_seconds=0.001,
+        max_in_flight=2,
+        max_drain_seconds=1.0,
+        warmup_requests=1,
+        after_warmup_hook=hook,
+    )
+    assert events == ["warmup", "hook", "measured"]
+
+
 async def _assert_open_loop_records_overload() -> None:
     async def request_factory(request_id: str, index: int, is_warmup: bool):
         async def stream():

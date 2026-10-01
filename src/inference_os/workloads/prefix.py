@@ -25,6 +25,10 @@ class PreparedPrompt:
     expected_cache_state: str
     prompt_token_sha256: str
     reusable_prefix_sha256: str | None
+    application_profile: str | None = None
+    prompt_layout: str | None = None
+    relationship_id: str | None = None
+    sequence_index: int | None = None
 
     def metadata(self) -> dict[str, object]:
         """Return JSON-serializable metadata for ``workload.jsonl``."""
@@ -36,6 +40,10 @@ class PreparedPrompt:
             "expected_cache_state": self.expected_cache_state,
             "prompt_token_sha256": self.prompt_token_sha256,
             "reusable_prefix_sha256": self.reusable_prefix_sha256,
+            "application_profile": self.application_profile,
+            "prompt_layout": self.prompt_layout,
+            "relationship_id": self.relationship_id,
+            "sequence_index": self.sequence_index,
         }
 
 

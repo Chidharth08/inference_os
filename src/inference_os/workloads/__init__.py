@@ -2,6 +2,7 @@
 
 from typing import TYPE_CHECKING, Any
 
+from inference_os.workloads.application import prepare_application_prompt_plan
 from inference_os.workloads.base import Tokenizer
 from inference_os.workloads.prefix import (
     PreparedPrompt,
@@ -42,4 +43,5 @@ __all__ = [
     "generate_synthetic_prompt",
     "common_prefix_length",
     "prepare_reuse_prompt_plan",
+    "prepare_application_prompt_plan",
 ]

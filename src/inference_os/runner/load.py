@@ -10,7 +10,7 @@ from typing import Awaitable, Callable, Sequence
 
 from inference_os.metrics.request import RequestMeasurement
 from inference_os.metrics.summary import BenchmarkSummary, compute_benchmark_summary
-from inference_os.runner.benchmark import RequestFactory
+from inference_os.runner.benchmark import AsyncHook, RequestFactory
 from inference_os.runner.request import ClockFn, run_single_request
 
 SleepFn = Callable[[float], Awaitable[None]]
@@ -66,6 +66,7 @@ async def run_open_loop(
     warmup_requests: int = 0,
     clock_fn: ClockFn = time.perf_counter_ns,
     sleep_fn: SleepFn = asyncio.sleep,
+    after_warmup_hook: AsyncHook | None = None,
 ) -> OpenLoopResult:
     """Dispatch constant-rate arrivals independently of request completions.
 
@@ -100,6 +101,8 @@ async def run_open_loop(
     warmup_summary = (
         compute_benchmark_summary(warmups, warmup_duration) if warmups else None
     )
+    if after_warmup_hook is not None:
+        await after_warmup_hook()
 
     measurements: list[RequestMeasurement | None] = [None] * len(offsets)
     in_flight_samples: list[InFlightSample] = []

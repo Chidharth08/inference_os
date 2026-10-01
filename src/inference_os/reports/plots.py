@@ -1415,3 +1415,158 @@ def generate_e008_plots(
     plt.close(fig)
     generated.append(latency_path)
     return generated
+
+
+def generate_e009_plots(
+    profiles: Sequence[dict[str, Any]], output_dir: Path | str
+) -> list[Path]:
+    """Plot controlled application-shaped cache comparisons."""
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    if not profiles:
+        return []
+    labels = [str(item["profile"]).replace("_", "\n") for item in profiles]
+    positions = list(range(len(profiles)))
+    generated: list[Path] = []
+
+    latency_path = out / "latency_by_application_profile.png"
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+    for ax, metric, title in (
+        (axes[0], "ttft_stats", "Time to First Token"),
+        (axes[1], "e2e_latency_stats", "End-to-End Latency"),
+    ):
+        off = [
+            float(item["cache_off"]["benchmark"][metric]["p50"]) * 1000.0
+            for item in profiles
+        ]
+        on = [
+            float(item["cache_on"]["benchmark"][metric]["p50"]) * 1000.0
+            for item in profiles
+        ]
+        width = 0.36
+        ax.bar([x - width / 2 for x in positions], off, width, label="Cache OFF")
+        ax.bar([x + width / 2 for x in positions], on, width, label="Cache ON")
+        ax.set_title(title, fontweight="bold")
+        ax.set_ylabel("ms")
+        ax.set_xticks(positions, labels)
+        ax.grid(axis="y", linestyle="--", alpha=0.5)
+        ax.legend()
+    fig.suptitle("E009: Application-Shaped Latency", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(latency_path, dpi=200)
+    plt.close(fig)
+    generated.append(latency_path)
+
+    benefit_path = out / "cache_reuse_and_ttft_benefit.png"
+    fig, left = plt.subplots(figsize=(9, 5))
+    right = left.twinx()
+    hit = [
+        float(item.get("observed_cache_hit_fraction") or 0.0) * 100.0
+        for item in profiles
+    ]
+    reduction = [
+        -float(item.get("ttft_p50_change_percent") or 0.0) for item in profiles
+    ]
+    width = 0.36
+    left.bar(
+        [x - width / 2 for x in positions],
+        hit,
+        width,
+        label="Observed hit fraction",
+    )
+    right.bar(
+        [x + width / 2 for x in positions],
+        reduction,
+        width,
+        color="#d62728",
+        alpha=0.75,
+        label="TTFT P50 reduction",
+    )
+    left.set_title("E009: Verified Reuse and TTFT Benefit", fontweight="bold")
+    left.set_ylabel("Cache-hit fraction (%)")
+    right.set_ylabel("TTFT P50 reduction (%)", color="#d62728")
+    left.set_xticks(positions, labels)
+    left.grid(axis="y", linestyle="--", alpha=0.5)
+    lines = [*left.containers, *right.containers]
+    left.legend(lines, [item.get_label() for item in lines], loc="upper left")
+    fig.tight_layout()
+    fig.savefig(benefit_path, dpi=200)
+    plt.close(fig)
+    generated.append(benefit_path)
+
+    sequence_path = out / "cacheable_prefix_by_sequence_index.png"
+    fig, ax = plt.subplots(figsize=(9, 5))
+    for item in profiles:
+        values = item["cache_on"]["reuse_plan"]["cacheable_tokens_by_sequence_index"]
+        x = sorted(int(key) for key in values)
+        y = [float(values[str(key)]) for key in x]
+        ax.plot(x, y, "o-", label=str(item["profile"]).replace("_", " "))
+    ax.set_title("E009: Reusable Prefix Across Turns or Calls", fontweight="bold")
+    ax.set_xlabel("Turn, call, or request index")
+    ax.set_ylabel("Mean cacheable prefix tokens")
+    ax.grid(True, linestyle="--", alpha=0.5)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(sequence_path, dpi=200)
+    plt.close(fig)
+    generated.append(sequence_path)
+    return generated
+
+
+def generate_e009_load_plots(
+    profiles: Sequence[dict[str, Any]], output_dir: Path | str
+) -> list[Path]:
+    """Plot selected E009 open-loop throughput, goodput, and latency."""
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    if not profiles:
+        return []
+    labels = [str(item["profile"]).replace("_", "\n") for item in profiles]
+    positions = list(range(len(profiles)))
+    width = 0.36
+    generated: list[Path] = []
+
+    capacity_path = out / "throughput_and_goodput_by_rag_layout.png"
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    for ax, key, title in (
+        (axes[0], "request_throughput", "Completed Throughput"),
+        (axes[1], "goodput", "SLO Goodput"),
+    ):
+        source = "benchmark" if key == "request_throughput" else "slo"
+        off = [float(item["cache_off"][source][key]) for item in profiles]
+        on = [float(item["cache_on"][source][key]) for item in profiles]
+        ax.bar([x - width / 2 for x in positions], off, width, label="Cache OFF")
+        ax.bar([x + width / 2 for x in positions], on, width, label="Cache ON")
+        ax.set_title(title, fontweight="bold")
+        ax.set_ylabel("requests/s")
+        ax.set_xticks(positions, labels)
+        ax.grid(axis="y", linestyle="--", alpha=0.5)
+        ax.legend()
+    fig.suptitle("E009: Selected Open-Loop RAG Cases", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(capacity_path, dpi=200)
+    plt.close(fig)
+    generated.append(capacity_path)
+
+    latency_path = out / "open_loop_latency_by_rag_layout.png"
+    fig, ax = plt.subplots(figsize=(8, 5))
+    off = [
+        float(item["cache_off"]["benchmark"]["ttft_stats"]["p95"]) * 1000.0
+        for item in profiles
+    ]
+    on = [
+        float(item["cache_on"]["benchmark"]["ttft_stats"]["p95"]) * 1000.0
+        for item in profiles
+    ]
+    ax.bar([x - width / 2 for x in positions], off, width, label="Cache OFF")
+    ax.bar([x + width / 2 for x in positions], on, width, label="Cache ON")
+    ax.set_title("E009: Open-Loop TTFT P95", fontweight="bold")
+    ax.set_ylabel("ms")
+    ax.set_xticks(positions, labels)
+    ax.grid(axis="y", linestyle="--", alpha=0.5)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(latency_path, dpi=200)
+    plt.close(fig)
+    generated.append(latency_path)
+    return generated

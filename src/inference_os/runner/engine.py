@@ -14,6 +14,7 @@ from inference_os.runner.benchmark import (
 )
 from inference_os.telemetry.environment import capture_environment
 from inference_os.telemetry.gpu import GPUTelemetrySampler, GPUTelemetrySummary
+from inference_os.workloads.application import prepare_application_prompt_plan
 from inference_os.workloads.base import Tokenizer
 from inference_os.workloads.prefix import prepare_reuse_prompt_plan
 from inference_os.workloads.spec import (
@@ -66,7 +67,7 @@ async def execute_benchmark(
     sampling_mode = (
         config.workload.sampling_mode if config.workload is not None else "iid"
     )
-    if sampling_mode == "stratified":
+    if sampling_mode in {"stratified", "sequence"}:
         # Stratify each phase independently so the measured distribution is not
         # distorted by removing the warm-up prefix from one combined plan.
         warmup_specs = generate_request_specs(
@@ -105,6 +106,24 @@ async def execute_benchmark(
         "shared_prefix",
     }:
         warmup_plan, measured_plan = prepare_reuse_prompt_plan(
+            tokenizer,
+            warmup_specs=warmup_specs,
+            measured_specs=measured_specs,
+            prompt_reuse=config.workload.prompt_reuse,
+            seed=config.seed,
+            prefix_caching_enabled=config.enable_prefix_caching,
+        )
+        prompts = [
+            *(prepared.text for prepared in warmup_plan),
+            *(prepared.text for prepared in measured_plan),
+        ]
+        warmup_workload_metadata = [item.metadata() for item in warmup_plan]
+        workload_metadata = [item.metadata() for item in measured_plan]
+    elif (
+        config.workload is not None
+        and config.workload.prompt_reuse.mode == "application"
+    ):
+        warmup_plan, measured_plan = prepare_application_prompt_plan(
             tokenizer,
             warmup_specs=warmup_specs,
             measured_specs=measured_specs,

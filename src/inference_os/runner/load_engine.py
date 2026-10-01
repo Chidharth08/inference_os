@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from pathlib import Path
-from typing import AsyncGenerator, Callable
+from typing import AsyncGenerator, Awaitable, Callable
 
 import httpx
 
@@ -19,7 +19,9 @@ from inference_os.runner.load import (
 )
 from inference_os.telemetry.environment import capture_environment
 from inference_os.telemetry.gpu import GPUTelemetrySampler, GPUTelemetrySummary
+from inference_os.workloads.application import prepare_application_prompt_plan
 from inference_os.workloads.base import Tokenizer
+from inference_os.workloads.prefix import prepare_reuse_prompt_plan
 from inference_os.workloads.spec import TokenLengthDistribution, generate_request_specs
 from inference_os.workloads.synthetic import generate_synthetic_prompt
 
@@ -34,6 +36,7 @@ async def execute_open_loop_benchmark(
     slo: SLOConfig,
     tokenizer: Tokenizer | None = None,
     client: httpx.AsyncClient | None = None,
+    after_warmup_hook: Callable[[], Awaitable[None]] | None = None,
 ) -> tuple[Path, OpenLoopResult, SLOSummary, GPUTelemetrySummary | None]:
     """Realize, run, evaluate, and persist one constant-rate load point."""
     if tokenizer is None:
@@ -51,7 +54,7 @@ async def execute_open_loop_benchmark(
         output_distribution = config.workload.max_output_tokens
         sampling_mode = config.workload.sampling_mode
 
-    if sampling_mode == "stratified":
+    if sampling_mode in {"stratified", "sequence"}:
         warmup_specs = generate_request_specs(
             num_requests=config.warmup_requests,
             seed=config.seed + 1,
@@ -78,14 +81,53 @@ async def execute_open_loop_benchmark(
         warmup_specs = all_specs[: config.warmup_requests]
         measured_specs = all_specs[config.warmup_requests :]
 
-    prompts = [
-        generate_synthetic_prompt(
+    warmup_metadata: list[dict[str, object]] | None = None
+    measured_metadata: list[dict[str, object]] | None = None
+    reuse_mode = (
+        config.workload.prompt_reuse.mode if config.workload is not None else "none"
+    )
+    if config.workload is not None and reuse_mode in {
+        "unique_prefix",
+        "shared_prefix",
+    }:
+        warmup_plan, measured_plan = prepare_reuse_prompt_plan(
             tokenizer,
-            spec.target_input_tokens,
-            config.seed + index,
+            warmup_specs=warmup_specs,
+            measured_specs=measured_specs,
+            prompt_reuse=config.workload.prompt_reuse,
+            seed=config.seed,
+            prefix_caching_enabled=config.enable_prefix_caching,
         )
-        for index, spec in enumerate(all_specs)
-    ]
+        prompts = [
+            *(item.text for item in warmup_plan),
+            *(item.text for item in measured_plan),
+        ]
+        warmup_metadata = [item.metadata() for item in warmup_plan]
+        measured_metadata = [item.metadata() for item in measured_plan]
+    elif config.workload is not None and reuse_mode == "application":
+        warmup_plan, measured_plan = prepare_application_prompt_plan(
+            tokenizer,
+            warmup_specs=warmup_specs,
+            measured_specs=measured_specs,
+            prompt_reuse=config.workload.prompt_reuse,
+            seed=config.seed,
+            prefix_caching_enabled=config.enable_prefix_caching,
+        )
+        prompts = [
+            *(item.text for item in warmup_plan),
+            *(item.text for item in measured_plan),
+        ]
+        warmup_metadata = [item.metadata() for item in warmup_plan]
+        measured_metadata = [item.metadata() for item in measured_plan]
+    else:
+        prompts = [
+            generate_synthetic_prompt(
+                tokenizer,
+                spec.target_input_tokens,
+                config.seed + index,
+            )
+            for index, spec in enumerate(all_specs)
+        ]
     input_counts = [tokenizer.count_tokens(prompt) for prompt in prompts]
 
     async def request_factory(
@@ -126,6 +168,7 @@ async def execute_open_loop_benchmark(
             max_in_flight=max_in_flight,
             max_drain_seconds=max_drain_seconds,
             warmup_requests=config.warmup_requests,
+            after_warmup_hook=after_warmup_hook,
         )
     gpu_summary = sampler.get_summary()
     slo_summary = evaluate_slo(
@@ -153,6 +196,8 @@ async def execute_open_loop_benchmark(
         gpu_samples=sampler.get_samples(),
         warmup_workload_specs=warmup_specs,
         workload_specs=measured_specs,
+        warmup_workload_metadata=warmup_metadata,
+        workload_metadata=measured_metadata,
         extra_config={
             "request_rate": request_rate,
             "duration_seconds": duration_seconds,

@@ -1,0 +1,30 @@
+experiment_id: E009
+model: Qwen/Qwen2.5-7B-Instruct
+base_url: http://localhost:18000
+num_requests: 24
+warmup_requests: 3
+concurrency: 1
+seed: 42
+temperature: 0.0
+request_timeout_seconds: 300.0
+enable_prefix_caching: true
+enable_chunked_prefill: false
+telemetry_interval_seconds: 0.1
+device_index: 0
+output_dir: runs
+workload:
+  name: e009_chat_like_cache_on
+  sampling_mode: sequence
+  input_tokens:
+    values: [1024]
+    weights: [1.0]
+  max_output_tokens:
+    values: [64]
+    weights: [1.0]
+  prompt_reuse:
+    mode: application
+    application_profile: chat_like
+    prompt_layout: default
+    relationship_group_count: 4
+    stable_prefix_tokens: 512
+    cache_block_size_tokens: 16

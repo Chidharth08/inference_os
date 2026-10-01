@@ -958,7 +958,7 @@ metric deltas can be validated offline.
 
 The current V4 milestone is:
 
-## V4.3 — E009 Application-Shaped Reuse Next
+## V4.3 — E009 GPU Pilot Pending
 
 V1, V2, and the E007 mechanism-validation milestone are complete. E007 ran all
 four pilot and canonical conditions on an RTX 3090 with vLLM 0.30.0. All 120
@@ -981,9 +981,15 @@ at 0% reuse changed TTFT P50 by only +0.14%; positive reuse reduced TTFT P50 by
 20.36%, 41.80%, 68.81%, and 79.49% as the reusable fraction increased.
 
 The raw runs, comparison, plots, and report are preserved under `runs/` and
-`outputs/e008_prefix_reuse_sensitivity/`. The next task is E009: apply verified
-prefix reuse to chat-like, RAG-like, summarization-like, and agent-like request
-relationships.
+`outputs/e008_prefix_reuse_sensitivity/`.
+
+The local E009 implementation is complete. It generates deterministic chat-like
+conversations, cache-friendly and cache-hostile RAG layouts with the same
+document content, summarization-like short-prefix controls, and agent-like
+growing trajectories. Ten controlled cache-OFF/cache-ON conditions validate
+exact cache-hit accounting. Four selected RAG conditions reuse the same plans
+under 1 request/s open-loop load with SLO goodput measurement. The next task is
+to run E009 pilots on the target GPU before canonical collection.
 
 ---
 

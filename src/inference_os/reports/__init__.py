@@ -10,6 +10,8 @@ from inference_os.reports.plots import (
     generate_e006_plots,
     generate_e007_plots,
     generate_e008_plots,
+    generate_e009_load_plots,
+    generate_e009_plots,
 )
 
 __all__ = [
@@ -22,4 +24,6 @@ __all__ = [
     "generate_e006_plots",
     "generate_e007_plots",
     "generate_e008_plots",
+    "generate_e009_plots",
+    "generate_e009_load_plots",
 ]

@@ -125,8 +125,10 @@ class TokenLengthDistribution:
             raise ValueError("sample count cannot be negative")
         if mode == "iid":
             return [self.sample(rng) for _ in range(count)]
+        if mode == "sequence":
+            return [self.values[index % len(self.values)] for index in range(count)]
         if mode != "stratified":
-            raise ValueError("sampling mode must be 'iid' or 'stratified'")
+            raise ValueError("sampling mode must be 'iid', 'stratified', or 'sequence'")
         if count == 0:
             return []
 
@@ -157,9 +159,14 @@ class PromptReuseConfig:
     shared_prefix_tokens: int = 0
     reuse_group_id: str = "prefix-1"
     cache_block_size_tokens: int = 16
+    application_profile: str | None = None
+    prompt_layout: str = "default"
+    relationship_group_count: int = 1
+    stable_prefix_tokens: int = 0
+    document_tokens: int = 0
 
     def __post_init__(self) -> None:
-        valid_modes = {"none", "unique_prefix", "shared_prefix"}
+        valid_modes = {"none", "unique_prefix", "shared_prefix", "application"}
         if self.mode not in valid_modes:
             raise ValueError(f"prompt_reuse mode must be one of {sorted(valid_modes)}")
         if (
@@ -181,10 +188,42 @@ class PromptReuseConfig:
                 )
             if not self.reuse_group_id.strip():
                 raise ValueError("shared_prefix mode requires a reuse_group_id")
-        elif self.shared_prefix_tokens != 0:
+        elif self.mode != "application" and self.shared_prefix_tokens != 0:
             raise ValueError(
                 "shared_prefix_tokens is only valid for shared_prefix mode"
             )
+        if self.mode == "application":
+            valid_profiles = {
+                "chat_like",
+                "rag_like",
+                "summarization_like",
+                "agent_like",
+            }
+            if self.application_profile not in valid_profiles:
+                raise ValueError(
+                    f"application_profile must be one of {sorted(valid_profiles)}"
+                )
+            if self.prompt_layout not in {"default", "friendly", "hostile"}:
+                raise ValueError(
+                    "application prompt_layout must be default, friendly, or hostile"
+                )
+            if self.application_profile == "rag_like":
+                if self.prompt_layout not in {"friendly", "hostile"}:
+                    raise ValueError("rag_like requires friendly or hostile layout")
+            elif self.prompt_layout != "default":
+                raise ValueError(
+                    "prompt_layout is only configurable for rag_like profiles"
+                )
+            if self.relationship_group_count <= 0:
+                raise ValueError("relationship_group_count must be positive")
+            if self.stable_prefix_tokens <= 0:
+                raise ValueError("application mode requires stable_prefix_tokens")
+            if self.document_tokens < 0:
+                raise ValueError("document_tokens must be non-negative")
+            if self.application_profile == "rag_like" and self.document_tokens <= 0:
+                raise ValueError("rag_like requires positive document_tokens")
+        elif self.application_profile is not None:
+            raise ValueError("application_profile requires application mode")
 
 
 @dataclass(frozen=True, slots=True)
@@ -200,8 +239,10 @@ class WorkloadConfig:
     def __post_init__(self) -> None:
         if not self.name or not self.name.strip():
             raise ValueError("workload name cannot be empty")
-        if self.sampling_mode not in {"iid", "stratified"}:
-            raise ValueError("workload sampling_mode must be 'iid' or 'stratified'")
+        if self.sampling_mode not in {"iid", "stratified", "sequence"}:
+            raise ValueError(
+                "workload sampling_mode must be 'iid', 'stratified', or 'sequence'"
+            )
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> WorkloadConfig:
@@ -228,6 +269,19 @@ class WorkloadConfig:
                 cache_block_size_tokens=int(
                     prompt_reuse_data.get("cache_block_size_tokens", 16)
                 ),
+                application_profile=(
+                    str(prompt_reuse_data["application_profile"])
+                    if prompt_reuse_data.get("application_profile") is not None
+                    else None
+                ),
+                prompt_layout=str(prompt_reuse_data.get("prompt_layout", "default")),
+                relationship_group_count=int(
+                    prompt_reuse_data.get("relationship_group_count", 1)
+                ),
+                stable_prefix_tokens=int(
+                    prompt_reuse_data.get("stable_prefix_tokens", 0)
+                ),
+                document_tokens=int(prompt_reuse_data.get("document_tokens", 0)),
             ),
             sampling_mode=str(data.get("sampling_mode", "iid")),
         )
