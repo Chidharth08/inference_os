@@ -1315,9 +1315,7 @@ def generate_e008_plots(
     if not ordered:
         return []
 
-    fractions = [
-        float(point["requested_shared_fraction_percent"]) for point in ordered
-    ]
+    fractions = [float(point["requested_shared_fraction_percent"]) for point in ordered]
     generated: list[Path] = []
 
     ttft_path = out_path / "ttft_vs_shared_fraction.png"
@@ -1328,18 +1326,14 @@ def generate_e008_plots(
     ):
         p50 = [
             float(
-                (point[cache_key]["benchmark"].get("ttft_stats") or {}).get(
-                    "p50", 0.0
-                )
+                (point[cache_key]["benchmark"].get("ttft_stats") or {}).get("p50", 0.0)
             )
             * 1000.0
             for point in ordered
         ]
         p95 = [
             float(
-                (point[cache_key]["benchmark"].get("ttft_stats") or {}).get(
-                    "p95", 0.0
-                )
+                (point[cache_key]["benchmark"].get("ttft_stats") or {}).get("p95", 0.0)
             )
             * 1000.0
             for point in ordered
@@ -1404,11 +1398,7 @@ def generate_e008_plots(
             ("cache_on", "Cache ON P50", "s-"),
         ):
             values = [
-                float(
-                    (point[cache_key]["benchmark"].get(metric) or {}).get(
-                        "p50", 0.0
-                    )
-                )
+                float((point[cache_key]["benchmark"].get(metric) or {}).get("p50", 0.0))
                 * 1000.0
                 for point in ordered
             ]

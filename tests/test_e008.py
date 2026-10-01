@@ -210,9 +210,11 @@ def test_e008_summarizer_requires_ten_paired_conditions(tmp_path: Path) -> None:
                     ),
                 },
                 "cache_phase_latency": {
-                    "disabled" if not cache_on else (
-                        "no_cacheable_prefix" if fraction == 0 else "warm"
-                    ): {"p50": ttft}
+                    "disabled"
+                    if not cache_on
+                    else ("no_cacheable_prefix" if fraction == 0 else "warm"): {
+                        "p50": ttft
+                    }
                 },
             }
             (run_dir / "e008_condition.json").write_text(
@@ -220,9 +222,7 @@ def test_e008_summarizer_requires_ten_paired_conditions(tmp_path: Path) -> None:
             )
             run_dirs.append(run_dir)
 
-    comparison_dir, summary = runner.summarize_e008_runs(
-        run_dirs, output_root=tmp_path
-    )
+    comparison_dir, summary = runner.summarize_e008_runs(run_dirs, output_root=tmp_path)
     assert summary["status"] == "SUCCESS"
     assert summary["observed_hit_fraction_nondecreasing"] is True
     assert len(summary["points"]) == 5

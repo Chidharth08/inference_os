@@ -93,9 +93,7 @@ def build_fraction_config(
 ) -> tuple[BenchmarkConfig, dict[str, float | int]]:
     """Resolve a requested fraction to a cache-block-aligned prompt boundary."""
     if requested_fraction_percent not in REQUESTED_FRACTIONS:
-        raise ValueError(
-            f"shared fraction must be one of {list(REQUESTED_FRACTIONS)}"
-        )
+        raise ValueError(f"shared fraction must be one of {list(REQUESTED_FRACTIONS)}")
     assert base.workload is not None
     total_tokens = base.workload.input_tokens.values[0]
     block_size = base.workload.prompt_reuse.cache_block_size_tokens
@@ -147,9 +145,7 @@ async def execute_e008_condition(
     """Run and persist one isolated E008 fraction/cache condition."""
     assert config.workload is not None
     reuse = config.workload.prompt_reuse
-    requested_fraction = int(
-        fraction_metadata["requested_shared_fraction_percent"]
-    )
+    requested_fraction = int(fraction_metadata["requested_shared_fraction_percent"])
     preflight = await fetch_vllm_metrics(config.base_url, client=client)
     live_config = validate_cache_server_config(
         preflight,
@@ -279,9 +275,7 @@ def summarize_e008_runs(
                 "resolved_shared_prefix_tokens": on["fraction"][
                     "resolved_shared_prefix_tokens"
                 ],
-                "resolved_shared_fraction": on["fraction"][
-                    "resolved_shared_fraction"
-                ],
+                "resolved_shared_fraction": on["fraction"]["resolved_shared_fraction"],
                 "observed_cache_hit_fraction": on["cache"].get(
                     "observed_prefix_cache_hit_fraction"
                 ),
@@ -289,9 +283,7 @@ def summarize_e008_runs(
                 "ttft_p50_cache_off_seconds": off_ttft,
                 "ttft_p50_cache_on_seconds": on_ttft,
                 "ttft_p50_change_seconds": on_ttft - off_ttft,
-                "ttft_p50_change_percent": _relative_change_percent(
-                    off_ttft, on_ttft
-                ),
+                "ttft_p50_change_percent": _relative_change_percent(off_ttft, on_ttft),
                 "steady_state_ttft_p50_change_percent": _relative_change_percent(
                     _phase_ttft_p50(off, "disabled"),
                     _phase_ttft_p50(on, warm_state),
@@ -342,9 +334,7 @@ def _summarize_reuse_plan(
         "steady_state_cacheable_prefix_tokens_max": max(steady, default=0),
         "expected_cache_hit_tokens": sum(cacheable),
         "expected_measured_hit_fraction": (
-            sum(cacheable) / (len(measured) * total_prompt_tokens)
-            if measured
-            else None
+            sum(cacheable) / (len(measured) * total_prompt_tokens) if measured else None
         ),
     }
 
@@ -458,18 +448,14 @@ async def main_async(args: argparse.Namespace) -> int:
         return 1
     try:
         config = load_e008_config(args.config)
-        config, fraction_metadata = build_fraction_config(
-            config, args.shared_fraction
-        )
+        config, fraction_metadata = build_fraction_config(config, args.shared_fraction)
         if args.base_url:
             config = replace(config, base_url=args.base_url)
         if args.output_dir:
             config = replace(config, output_dir=args.output_dir)
         if args.pilot:
             config = replace(config, num_requests=6, warmup_requests=2)
-        run_dir, condition = await execute_e008_condition(
-            config, fraction_metadata
-        )
+        run_dir, condition = await execute_e008_condition(config, fraction_metadata)
     except (OSError, ValueError, httpx.HTTPError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
