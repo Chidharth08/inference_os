@@ -1,0 +1,45 @@
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "base_url": "http://localhost:18000",
+  "prompt_tokens": 128,
+  "max_output_tokens": 64,
+  "num_requests": 6,
+  "warmup_requests": 2,
+  "seed": 42,
+  "temperature": 0.0,
+  "request_timeout_seconds": 300.0,
+  "telemetry_interval_seconds": 0.1,
+  "device_index": 0,
+  "experiment_id": "E008",
+  "output_dir": "runs",
+  "enable_prefix_caching": true,
+  "chunked_prefill": null,
+  "enable_chunked_prefill": false,
+  "concurrency": 1,
+  "workload": {
+    "name": "e008_fraction_025_cache_on",
+    "input_tokens": {
+      "values": [
+        4096
+      ],
+      "weights": [
+        1.0
+      ]
+    },
+    "max_output_tokens": {
+      "values": [
+        64
+      ],
+      "weights": [
+        1.0
+      ]
+    },
+    "prompt_reuse": {
+      "mode": "shared_prefix",
+      "shared_prefix_tokens": 1024,
+      "reuse_group_id": "e008-prefix-1024",
+      "cache_block_size_tokens": 16
+    },
+    "sampling_mode": "iid"
+  }
+}

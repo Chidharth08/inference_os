@@ -5,6 +5,12 @@ E008 asks:
 > How does prefix-caching benefit change as the reusable fraction of a fixed-size
 > prompt increases?
 
+**Status: complete.** All ten canonical RTX 3090 conditions passed. Observed
+hit fraction increased monotonically, exact hit-token counts matched the request
+plans, and TTFT P50 reductions at 25%, 50%, 75%, and 90% requested reuse were
+20.36%, 41.80%, 68.81%, and 79.49%. See
+`outputs/e008_prefix_reuse_sensitivity/e008_report.md` for the full analysis.
+
 It pairs cache OFF and cache ON at five requested reusable-prefix fractions:
 
 | Requested fraction | Resolved shared tokens | Resolved fraction | Unique suffix |

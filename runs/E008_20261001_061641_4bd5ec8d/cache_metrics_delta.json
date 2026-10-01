@@ -1,0 +1,10 @@
+{
+  "prefix_cache_query_tokens": 122880.0,
+  "prefix_cache_hit_tokens": 29696.0,
+  "observed_prefix_cache_hit_fraction": 0.24166666666666667,
+  "prompt_tokens": 122880.0,
+  "cached_prompt_tokens": 29696.0,
+  "preemptions": 0.0,
+  "kv_cache_usage_before": 0.0,
+  "kv_cache_usage_after": 0.0
+}

@@ -1,0 +1,215 @@
+{
+  "experiment_id": "E008",
+  "condition": "fraction_000_cache_off",
+  "success": true,
+  "mechanism_valid": true,
+  "mechanism_checks": {
+    "request_plan_valid": true,
+    "server_config_verified": true,
+    "no_cache_hits_when_disabled": true
+  },
+  "run_dir": "runs/E008_20261001_053529_61044607",
+  "fraction": {
+    "requested_shared_fraction_percent": 0,
+    "requested_shared_prefix_tokens": 0.0,
+    "resolved_shared_prefix_tokens": 0,
+    "resolved_shared_fraction": 0.0,
+    "total_prompt_tokens": 4096,
+    "cache_block_size_tokens": 16
+  },
+  "reuse_plan": {
+    "measured_requests": 6,
+    "actual_reusable_prefix_tokens_min": 0,
+    "actual_reusable_prefix_tokens_max": 1,
+    "steady_state_cacheable_prefix_tokens_min": 0,
+    "steady_state_cacheable_prefix_tokens_max": 0,
+    "expected_cache_hit_tokens": 0,
+    "expected_measured_hit_fraction": 0.0
+  },
+  "server_cache_config": {
+    "enable_prefix_caching": false,
+    "block_size": 16,
+    "cache_dtype": "auto",
+    "gpu_memory_utilization": 0.9,
+    "labels": {
+      "_block_size_resolved": "True",
+      "block_size": "16",
+      "cache_dtype": "auto",
+      "enable_mamba_fine_grained_prefix_cache": "False",
+      "enable_prefix_caching": "False",
+      "engine": "0",
+      "gpu_memory_utilization": "0.9",
+      "is_attention_free": "False",
+      "kv_cache_dtype_skip_layers": "[]",
+      "kv_cache_layout": "None",
+      "kv_cache_max_concurrency": "1.4345703125",
+      "kv_cache_memory_bytes": "None",
+      "kv_cache_size_tokens": "47008",
+      "kv_offloading_backend": "native",
+      "kv_offloading_size": "None",
+      "kv_sharing_fast_prefill": "False",
+      "mamba_block_size": "None",
+      "mamba_cache_dtype": "auto",
+      "mamba_cache_mode": "none",
+      "mamba_page_size_padded": "None",
+      "mamba_ssm_cache_dtype": "auto",
+      "num_cpu_blocks": "None",
+      "num_gpu_blocks": "2938",
+      "num_gpu_blocks_override": "None",
+      "prefix_cache_retention_interval": "0",
+      "prefix_caching_hash_algo": "sha256",
+      "prefix_match_unit": "None",
+      "replayssm_buffer_len": "16",
+      "skip_page_size_padded": "None",
+      "sliding_window": "None",
+      "use_kda_recoverssm": "False",
+      "use_replayssm": "False",
+      "user_specified_block_size": "False",
+      "user_specified_mamba_block_size": "False"
+    }
+  },
+  "benchmark": {
+    "total_requests": 6,
+    "successful_requests": 6,
+    "failed_requests": 0,
+    "total_input_tokens": 24576,
+    "total_output_tokens": 384,
+    "total_duration_seconds": 12.740589818,
+    "request_throughput": 0.470935811113168,
+    "output_token_throughput": 30.139891911242753,
+    "input_token_throughput": 1928.9530823195362,
+    "total_token_throughput": 1959.092974230779,
+    "error_rate": 0.0,
+    "ttft_stats": {
+      "count": 6,
+      "mean": 0.8732291173333334,
+      "std_dev": 0.013256143613215032,
+      "min": 0.86587941,
+      "max": 0.900019792,
+      "p50": 0.867698828,
+      "p90": 0.8856657005,
+      "p95": 0.89284274625,
+      "p99": 0.89858438285
+    },
+    "e2e_latency_stats": {
+      "count": 6,
+      "mean": 2.1227911208333334,
+      "std_dev": 0.023507286757505835,
+      "min": 2.103641724,
+      "max": 2.167017485,
+      "p50": 2.1171638469999996,
+      "p90": 2.1473796485000003,
+      "p95": 2.15719856675,
+      "p99": 2.16505370135
+    },
+    "tpot_stats": {
+      "count": 6,
+      "mean": 0.019834317515873015,
+      "std_dev": 0.00017997039833094248,
+      "min": 0.019632944238095237,
+      "max": 0.020111074492063494,
+      "p50": 0.01983277807936508,
+      "p90": 0.020027205523809523,
+      "p95": 0.02006914000793651,
+      "p99": 0.020102687595238096
+    },
+    "errors": null
+  },
+  "gpu": {
+    "sample_count": 122,
+    "peak_memory_used_mb": 18518,
+    "avg_memory_used_mb": 18512.0,
+    "peak_utilization_gpu_pct": 100,
+    "avg_utilization_gpu_pct": 93.20491803278688,
+    "total_memory_mb": 24576
+  },
+  "cache": {
+    "prefix_cache_query_tokens": 0.0,
+    "prefix_cache_hit_tokens": 0.0,
+    "observed_prefix_cache_hit_fraction": null,
+    "prompt_tokens": 24576.0,
+    "cached_prompt_tokens": 0.0,
+    "preemptions": 0.0,
+    "kv_cache_usage_before": 0.0,
+    "kv_cache_usage_after": 0.0
+  },
+  "cache_phase_latency": {
+    "disabled": {
+      "count": 6,
+      "mean": 0.8732291173333334,
+      "std_dev": 0.013256143613215032,
+      "min": 0.86587941,
+      "max": 0.900019792,
+      "p50": 0.867698828,
+      "p90": 0.8856657005,
+      "p95": 0.89284274625,
+      "p99": 0.89858438285
+    }
+  },
+  "workload": {
+    "profile_name": "e008_fraction_000_cache_off",
+    "seed": 42,
+    "sampling_mode": "iid",
+    "request_count": 6,
+    "target_input_tokens": {
+      "count": 6,
+      "mean": 4096.0,
+      "std_dev": 0.0,
+      "min": 4096.0,
+      "max": 4096.0,
+      "p50": 4096.0,
+      "p90": 4096.0,
+      "p95": 4096.0,
+      "p99": 4096.0
+    },
+    "max_output_tokens": {
+      "count": 6,
+      "mean": 64.0,
+      "std_dev": 0.0,
+      "min": 64.0,
+      "max": 64.0,
+      "p50": 64.0,
+      "p90": 64.0,
+      "p95": 64.0,
+      "p99": 64.0
+    },
+    "configured_distributions": {
+      "target_input_tokens": {
+        "values": [
+          4096
+        ],
+        "weights": [
+          1.0
+        ],
+        "mean": 4096.0,
+        "std_dev": 0.0,
+        "coefficient_of_variation": 0.0
+      },
+      "max_output_tokens": {
+        "values": [
+          64
+        ],
+        "weights": [
+          1.0
+        ],
+        "mean": 64.0,
+        "std_dev": 0.0,
+        "coefficient_of_variation": 0.0
+      }
+    },
+    "sampling_error": {
+      "target_input_tokens": {
+        "configured_mean": 4096.0,
+        "realized_mean": 4096.0,
+        "mean_delta_tokens": 0.0,
+        "mean_delta_percent": 0.0
+      },
+      "max_output_tokens": {
+        "configured_mean": 64.0,
+        "realized_mean": 64.0,
+        "mean_delta_tokens": 0.0,
+        "mean_delta_percent": 0.0
+      }
+    }
+  }
+}
